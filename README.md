@@ -1,0 +1,9 @@
+### Yêu cầu: Blog web để đăng bài mất đồ, nhặt được đô
+
+## 1. Tab chính sẽ là trang giới thiệu mở đầu các thứ sẽ có login, tạo tài khoản…. sẽ có hiển thị vài bài viết liên quan đến mất đồ…    
+## 2. Các chức năng chính đăng bài mất đồ, đăng bài nhặt được đồ,  thành tìm kiếm (dựa trên mô tả rồi tìm)
+## 3. Đăng bài mất đồ sẽ có ô chụp ảnh đồ vật (dùng model train sẵn để nhận diện đồ đơn giản để gợi ý nhanh món đồ cần đăng mà gõ sẽ nhanh hơn còn vị trí các mô tả chính xác thì tự nhập chứ ai không làm được) và ô viết mô tả đồ vật + thời gian nhặt + nơi nhặt …
+## 4. Đăng bài  nhặt được đồ có thể up load ảnh của vật bị mất để web có thể tự đưa ra những đồ mà đúng với mô tả hoặc post để đó chờ người  rep nếu có người inbox tới chủ  bài đăng
+## 5. tab kênh chat để người mất đồ/nhặt được đồ có thể  inbox
+## 6. hệ thống  có  kết nối tới nơi quản  lý đồ ( có thể người nhặt khi  nhặt được đã  bỏ vào kho thuộc quản lý của  ueh thì  hệ thống sẽ  báo thời gian và địa điểm thích để đến lấy)
+## 7    . khi hoàn  thành 2  bên xác nhận trao trả thành công  thì người nhận sẽ được điểm rèn luyện …
