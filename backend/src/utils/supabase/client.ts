@@ -1,10 +1,19 @@
-import { createBrowserClient } from "@supabase/ssr";
+/**
+ * Supabase anonymous (browser-like) client dùng cho NestJS backend.
+ * Sử dụng @supabase/supabase-js thay vì @supabase/ssr (Next.js specific).
+ */
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+let anonClient: SupabaseClient | null = null;
 
-export const createClient = () =>
-    createBrowserClient(
-        supabaseUrl!,
-        supabaseKey!,
-    );
+export function getAnonClient(): SupabaseClient {
+  if (!anonClient) {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY env variables');
+    }
+    anonClient = createClient(url, key, { auth: { persistSession: false } });
+  }
+  return anonClient;
+}
