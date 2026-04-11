@@ -1,8 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
+        router.replace("/auth/login");
+    };
+
     return (
         <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm shadow-blue-900/5 h-16 flex items-center">
             <div className="w-full max-w-[1600px] mx-auto px-6 flex items-center gap-6">
@@ -45,14 +67,35 @@ export default function Header() {
                         <span className="material-symbols-outlined text-xl">notifications</span>
                     </button>
 
-                    {/* Profile Avatar - Thay đổi src khi có dữ liệu người dùng */}
-                    <button className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 shrink-0 hover:ring-2 hover:ring-[#5c6cff]/50 transition-all">
-                        <img
-                            src="https://ui-avatars.com/api/?name=User&background=f1f3f9&color=5f6368" // Thay đổi URL này bằng state/props chứa ảnh user
-                            alt="User avatar"
-                            className="w-full h-full object-cover"
-                        />
-                    </button>
+                    {/* Profile Avatar */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button 
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 shrink-0 hover:ring-2 hover:ring-[#5c6cff]/50 transition-all flex items-center justify-center cursor-pointer"
+                        >
+                            <img
+                                src="https://ui-avatars.com/api/?name=User&background=f1f3f9&color=5f6368"
+                                alt="User avatar"
+                                className="w-full h-full object-cover"
+                            />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {isDropdownOpen && (
+                            <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-xl shadow-[#3647dc]/10 border border-slate-100 p-2 z-50">
+                                <div className="px-3 py-2 border-b border-slate-50 mb-2">
+                                    <p className="text-xs font-semibold text-slate-700">Tài khoản</p>
+                                </div>
+                                <button 
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-3 py-2.5 text-sm text-[#b41340] hover:bg-[#b41340]/5 rounded-xl font-bold transition-colors flex items-center gap-3"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                                    Đăng xuất
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                 </div>
 
