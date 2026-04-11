@@ -32,7 +32,7 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
       
-      window.location.href = "/";
+      window.location.href = "/lost";
     } catch (err: any) {
       alert(err.message);
     } finally {
