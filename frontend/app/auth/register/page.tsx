@@ -48,11 +48,13 @@ export default function RegisterPage() {
         throw new Error(data.message || "Đăng ký thất bại");
       }
       
+      const payload = data.data || data;
+
       // Auto-login or redirect to login after successful registration
-      if (data.access_token) {
-        localStorage.setItem("access_token", data.access_token);
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
+      if (payload.access_token) {
+        localStorage.setItem("access_token", payload.access_token);
+        if (payload.user) {
+          localStorage.setItem("user", JSON.stringify(payload.user));
         }
         window.location.href = "/feeds";
       } else {
