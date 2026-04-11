@@ -20,6 +20,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { HandoversModule } from './modules/handovers/handovers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -37,6 +38,7 @@ import { AppService } from './app.service';
     ChatModule,
     HandoversModule,
     NotificationsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

@@ -22,7 +22,7 @@ export class LostPostsService {
       .insert({
         ...dto,
         user_id: userId,
-        status: 'pending',
+        status: 'approved',
       })
       .select('*')
       .single();
@@ -34,7 +34,7 @@ export class LostPostsService {
       post_type: 'lost',
       post_id: data.id,
       old_status: null,
-      new_status: 'pending',
+      new_status: 'approved',
       changed_by: userId,
       note: 'Bài đăng mới tạo',
     });

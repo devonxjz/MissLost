@@ -25,11 +25,13 @@ export default function LoginPage() {
         throw new Error(data.message || "Đăng nhập thất bại, vui lòng kiểm tra lại!");
       }
 
-      if (data.access_token) {
-        localStorage.setItem("access_token", data.access_token);
+      const payload = data.data || data;
+
+      if (payload.access_token) {
+        localStorage.setItem("access_token", payload.access_token);
       }
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
+      if (payload.user) {
+        localStorage.setItem("user", JSON.stringify(payload.user));
       }
 
       window.location.href = "/feeds";

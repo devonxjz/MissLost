@@ -19,7 +19,7 @@ export class FoundPostsService {
   async create(dto: CreateFoundPostDto, userId: string) {
     const { data, error } = await this.supabase
       .from('found_posts')
-      .insert({ ...dto, user_id: userId, status: 'pending' })
+      .insert({ ...dto, user_id: userId, status: 'approved' })
       .select('*')
       .single();
 
@@ -29,7 +29,7 @@ export class FoundPostsService {
       post_type: 'found',
       post_id: data.id,
       old_status: null,
-      new_status: 'pending',
+      new_status: 'approved',
       changed_by: userId,
       note: 'Bài đăng mới tạo',
     });
