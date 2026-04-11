@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const navItems = [
   { href: "/feeds", icon: "home", label: "Trang chủ" },
@@ -15,6 +16,15 @@ const navItems = [
 
 export default function SideNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Manual prefetch main routes
+  useEffect(() => {
+    // Prefetching important routes to load them in the background
+    // for native app-like instantaneous transitions.
+    const priorityRoutes = ["/feeds", "/lost", "/found", "/messages", "/settings"];
+    priorityRoutes.forEach(route => router.prefetch(route));
+  }, [router]);
 
   return (
     <>
@@ -41,6 +51,7 @@ export default function SideNavBar() {
               <Link
                 key={href}
                 href={href}
+                prefetch={true}
                 className={`px-4 py-3 flex items-center gap-3 font-semibold text-sm transition-all rounded-full
                   ${isActive
                     ? "bg-[#5B6CFF]/15 text-[#5B6CFF]"
@@ -67,22 +78,22 @@ export default function SideNavBar() {
 
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-100 flex justify-around items-center py-3 z-50">
-        <Link className="text-[#3647dc] flex flex-col items-center" href="/feeds">
+        <Link prefetch={true} className="text-[#3647dc] flex flex-col items-center" href="/feeds">
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
           <span className="text-[10px] font-bold">Trang chủ</span>
         </Link>
-        <Link className="text-slate-400 flex flex-col items-center" href="/lost">
+        <Link prefetch={true} className="text-slate-400 flex flex-col items-center" href="/lost">
           <span className="material-symbols-outlined">search_off</span>
           <span className="text-[10px]">Mất đồ</span>
         </Link>
         <div className="relative -top-6 bg-[#3647dc] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-[#3647dc]/30 border-4 border-[#f5f6fc] cursor-pointer">
           <span className="material-symbols-outlined text-3xl">add</span>
         </div>
-        <Link className="text-slate-400 flex flex-col items-center" href="/messages">
+        <Link prefetch={true} className="text-slate-400 flex flex-col items-center" href="/messages">
           <span className="material-symbols-outlined">chat</span>
           <span className="text-[10px]">Chat</span>
         </Link>
-        <Link className="text-slate-400 flex flex-col items-center" href="/settings">
+        <Link prefetch={true} className="text-slate-400 flex flex-col items-center" href="/settings">
           <span className="material-symbols-outlined">person</span>
           <span className="text-[10px]">Cá nhân</span>
         </Link>
