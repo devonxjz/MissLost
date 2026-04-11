@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/", icon: "home", label: "Trang chủ" },
+  { href: "/feeds", icon: "home", label: "Trang chủ" },
   { href: "/lost", icon: "search_off", label: "Mất đồ" },
   { href: "/found", icon: "location_on", label: "Nhặt được" },
   { href: "/storage", icon: "inventory_2", label: "Kho lưu trữ" },
@@ -19,7 +19,7 @@ export default function SideNavBar() {
   return (
     <>
       {/* Desktop SideNavBar */}
-      <aside className="hidden lg:flex w-72 flex-col gap-2 pt-4 shrink-0">
+      <aside className="hidden lg:flex w-72 flex-col gap-2 pt-4 shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto scrollbar-hide pb-4">
         <div className="px-4 mb-6">
           <div className="flex items-center gap-3">
             <img
@@ -67,7 +67,7 @@ export default function SideNavBar() {
 
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-100 flex justify-around items-center py-3 z-50">
-        <Link className="text-[#3647dc] flex flex-col items-center" href="/">
+        <Link className="text-[#3647dc] flex flex-col items-center" href="/feeds">
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
           <span className="text-[10px] font-bold">Trang chủ</span>
         </Link>

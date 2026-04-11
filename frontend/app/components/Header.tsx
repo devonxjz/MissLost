@@ -9,7 +9,7 @@ export default function Header() {
 
                 {/* 1. Brand Logo */}
                 <Link
-                    href="/"
+                    href="/feeds"
                     className="text-2xl font-black tracking-tighter text-[#5c6cff] shrink-0 hover:text-[#4b5aef] transition-colors"
                 >
                     MissLost
