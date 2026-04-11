@@ -54,7 +54,7 @@ export default function RegisterPage() {
         if (data.user) {
           localStorage.setItem("user", JSON.stringify(data.user));
         }
-        window.location.href = "/lost";
+        window.location.href = "/feeds";
       } else {
         // Redirect to login page if no token is returned (e.g., if email verification is required)
         window.location.href = "/auth/login?registered=true";
