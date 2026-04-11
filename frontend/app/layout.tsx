@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import Header from "@/app/header/Header";
-import SideNavBar from "@/components/SideNavBar";
+import ClientShell from "@/app/components/ClientShell";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin", "vietnamese"],
@@ -31,11 +30,7 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.variable} font-sans antialiased text-[#2c2f33] bg-[#f5f6fc] min-h-screen selection:bg-[#caceff]/60`}
       >
-        <Header />
-        <div className="flex pt-16 px-6 gap-6 max-w-[1600px] mx-auto">
-          <SideNavBar />
-          {children}
-        </div>
+        <ClientShell>{children}</ClientShell>
       </body>
     </html>
   );
