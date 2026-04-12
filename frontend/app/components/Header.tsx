@@ -4,10 +4,23 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+interface UserInfo {
+    full_name?: string;
+    email?: string;
+}
+
 export default function Header() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [user, setUser] = useState<UserInfo | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem("user");
+            if (stored) setUser(JSON.parse(stored));
+        } catch { /* ignore */ }
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -62,24 +75,33 @@ export default function Header() {
                         <span className="material-symbols-outlined text-xl">notifications</span>
                     </button>
 
-                    {/* Profile Avatar */}
-                    <div className="relative" ref={dropdownRef}>
+                    {/* Profile Avatar + User Info */}
+                    <div className="relative flex items-center gap-3" ref={dropdownRef}>
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                             className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 shrink-0 hover:ring-2 hover:ring-[#5c6cff]/50 transition-all flex items-center justify-center cursor-pointer"
                         >
                             <img
-                                src="https://ui-avatars.com/api/?name=User&background=f1f3f9&color=5f6368"
+                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || "User")}&background=f1f3f9&color=5f6368`}
                                 alt="User avatar"
                                 className="w-full h-full object-cover"
                             />
                         </button>
 
+                        {/* User name & email next to avatar */}
+                        <div className="hidden md:flex flex-col min-w-0">
+                            <span className="text-sm font-bold text-[#2c2f33] truncate max-w-[160px]">
+                                {user?.full_name || "Người dùng"}
+                            </span>
+
+                        </div>
+
                         {/* Dropdown Menu */}
                         {isDropdownOpen && (
-                            <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-xl shadow-[#3647dc]/10 border border-slate-100 p-2 z-50">
+                            <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-xl shadow-[#3647dc]/10 border border-slate-100 p-2 z-50">
                                 <div className="px-3 py-2 border-b border-slate-50 mb-2">
                                     <p className="text-xs font-semibold text-slate-700">Tài khoản</p>
+                                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{user?.email || ""}</p>
                                 </div>
                                 <button
                                     onClick={handleLogout}
