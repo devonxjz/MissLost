@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import ClientShell from "@/app/components/ClientShell";
+import RouteGuard from "@/app/components/RouteGuard";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin", "vietnamese"],
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.variable} font-sans antialiased text-[#2c2f33] bg-[#f5f6fc] min-h-screen selection:bg-[#caceff]/60`}
       >
-        <ClientShell>{children}</ClientShell>
+        <RouteGuard>
+          <ClientShell>{children}</ClientShell>
+        </RouteGuard>
       </body>
     </html>
   );

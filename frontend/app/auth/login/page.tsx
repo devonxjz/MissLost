@@ -34,7 +34,15 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(payload.user));
       }
 
-      window.location.href = "/feeds";
+      // --- SỬA TẠI ĐÂY: Điều hướng dựa trên role ---
+      // Lưu ý: Đảm bảo backend của bạn trả về field `role` trong payload.user
+      if (payload.user?.role === "admin") {
+        window.location.href = "/admin"; // Chuyển admin về trang quản trị
+      } else {
+        window.location.href = "/feeds"; // Chuyển user bình thường về feeds
+      }
+      // --------------------------------------------
+
     } catch (err: any) {
       alert(err.message);
     } finally {
