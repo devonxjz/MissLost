@@ -30,20 +30,6 @@ export default function SideNavBar() {
     <>
       {/* Desktop SideNavBar */}
       <aside className="hidden lg:flex w-72 flex-col gap-2 pt-4 shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto scrollbar-hide pb-4">
-        <div className="px-4 mb-6">
-          <div className="flex items-center gap-3">
-            <img
-              alt="User profile"
-              className="w-10 h-10 rounded-full border-2 border-[#3647dc]/20"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuzoumdYUvT-aTdjXGews9g11qRL6mhoT6azDHBlYJ7rS0CLFSyAXNhVA7R23H4NtVqb_EASEOXnPX9OntCm-CIq8nf26-0O88XlA-b5bT0v42XKwW7rfaNnkENXfGvSNiQDJkX6mSIpTFZV1kum2E8frP6k2MO62SaJO_a2arOa5X0cHnGn-FMTJIamF7fz0a-y3AzxgA1KIB6CwqWxiG1kuSwQWzq9tr4T6P615SjKbJFcMjwK6Y6XgcUWBtyeZ_jUbyxhobakU"
-            />
-            <div>
-              <p className="font-bold text-sm text-[#5B6CFF]">MissLost Profile</p>
-              <p className="text-xs text-slate-500">Verified Member</p>
-            </div>
-          </div>
-        </div>
-
         <nav className="flex flex-col gap-1">
           {navItems.map(({ href, icon, label }) => {
             const isActive = pathname === href;
