@@ -22,7 +22,7 @@ export default function Header() {
     const handleLogout = () => {
         localStorage.removeItem("access_token");
         localStorage.removeItem("user");
-        router.replace("/auth/login");
+        window.location.href = "/auth/login";
     };
 
     return (

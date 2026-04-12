@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { getSupabaseClient } from '../../config/supabase.config';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { NotFoundException } from '../../common/exceptions/app.exception';
@@ -12,7 +13,7 @@ export class UsersService {
   async findById(id: string) {
     const { data, error } = await this.supabase
       .from('users')
-      .select('id, full_name, email, student_id, phone, avatar_url, role, status, training_points, created_at')
+      .select('id, full_name, email, student_id, phone, avatar_url, role, status, training_points, created_at, bio')
       .eq('id', id)
       .single();
 
@@ -21,11 +22,17 @@ export class UsersService {
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto) {
+    const updateData: any = { ...dto };
+    if (dto.password) {
+      updateData.password_hash = await bcrypt.hash(dto.password, 12);
+      delete updateData.password;
+    }
+
     const { data, error } = await this.supabase
       .from('users')
-      .update(dto)
+      .update(updateData)
       .eq('id', id)
-      .select('id, full_name, email, phone, avatar_url, role, status, training_points')
+      .select('id, full_name, email, phone, avatar_url, role, status, training_points, bio')
       .single();
 
     if (error || !data) throw new NotFoundException('Người dùng', id);
