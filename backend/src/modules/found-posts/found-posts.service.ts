@@ -69,7 +69,7 @@ export class FoundPostsService {
   async findMyPosts(userId: string) {
     const { data, error } = await this.supabase
       .from('found_posts')
-      .select('id, title, status, created_at, item_categories(name, icon_name)')
+      .select('id, title, description, image_urls, view_count, status, created_at, item_categories(name, icon_name)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
