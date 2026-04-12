@@ -1,4 +1,107 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { apiFetch } from "@/app/lib/api";
+
+interface PostUser {
+  full_name: string;
+  avatar_url: string | null;
+}
+
+interface PostCategory {
+  name: string;
+  icon_name: string;
+}
+
+interface FeedPost {
+  id: string;
+  title: string;
+  description: string;
+  image_urls: string[];
+  status: string;
+  view_count: number;
+  created_at: string;
+  location_lost?: string;
+  time_lost?: string;
+  is_urgent?: boolean;
+  reward_note?: string;
+  users: PostUser;
+  item_categories: PostCategory | null;
+  _type: "lost";
+}
+
+interface PaginatedResponse {
+  data: FeedPost[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Vừa xong";
+  if (mins < 60) return `${mins} phút trước`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} ngày trước`;
+  return new Date(dateStr).toLocaleDateString("vi-VN");
+}
+
 export default function LostPage() {
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const LIMIT = 10;
+
+  const loadPosts = useCallback(
+    async (pageNum: number, reset = false) => {
+      if (loading) return;
+      setLoading(true);
+
+      try {
+        const res = await apiFetch<PaginatedResponse>(
+          `/lost-posts?status=approved&limit=${LIMIT}&page=${pageNum}`,
+        );
+
+        const newPosts = (res.data ?? []).map((p) => ({ ...p, _type: "lost" as const }));
+
+        setPosts((prev) => (reset ? newPosts : [...prev, ...newPosts]));
+        setHasMore(pageNum < (res.meta?.totalPages ?? 1));
+        setPage(pageNum);
+      } catch {
+        // Silent fail
+      } finally {
+        setLoading(false);
+        setInitialLoading(false);
+      }
+    },
+    [loading],
+  );
+
+  useEffect(() => {
+    loadPosts(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !loading) {
+          loadPosts(page + 1);
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, loading, page]);
+
   return (
     <>
       <main className="flex-1 p-8">
@@ -17,150 +120,105 @@ export default function LostPage() {
         </div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Card 1 */}
-          <div className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
-            <div className="relative h-64 overflow-hidden">
-              <img alt="Ví Da Màu Nâu" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWQ82aI3Q5N3zKqJ4OyEyTFswIA5_DR7RtwBQVuNzdDN1CNBCPGtroCoym5B2CiuBLoUdqbrIywEdGio0MDi1OV3_jgNnrtg5xoqJS1vMY-b2PpoYEC8ToNwzwVR4CYjKmt8kwARoT_Etv7wVZrZtzlmNJSEaQ4epCqSCm0wMG4vszldOL8SA08LnIp-6_ecWJvlSNJ8Fz5Lefi4e4rMGApCRQcD3C_xqJuHkNlIzQ6QG4-YoH0LTGtdsW9mAdA4jILD-Ej_swtbo"/>
-              <div className="absolute top-4 left-4 bg-[#b41340] text-[#ffefef] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                Mất đồ
-              </div>
-              <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-medium">2 giờ trước</div>
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-[#2c2f33] mb-1">Ví Da Màu Nâu</h3>
-                  <div className="flex items-center gap-2 text-[#595b61] text-sm">
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span>Quận 1, TP. Hồ Chí Minh</span>
+        {initialLoading ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden border border-white/20">
+                <div className="h-64 bg-slate-200 animate-pulse" />
+                <div className="p-6 space-y-4">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-1/2">
+                      <div className="h-6 w-full bg-slate-200 rounded animate-pulse mb-2" />
+                      <div className="h-4 w-3/4 bg-slate-200 rounded animate-pulse" />
+                    </div>
+                    <div className="h-6 w-1/4 bg-slate-200 rounded animate-pulse" />
                   </div>
+                  <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+                  <div className="h-4 w-2/3 bg-slate-200 rounded animate-pulse" />
                 </div>
-                <span className="text-[#b41340] font-extrabold text-lg">2.000.000đ</span>
               </div>
-              <p className="text-[#595b61] text-sm leading-relaxed mb-6 line-clamp-2">
-                Mất ví tại khu vực đường Nguyễn Huệ. Bên trong có CCCD mang tên Nguyễn Văn A, thẻ ngân hàng và một ít tiền mặt...
-              </p>
-              <div className="flex items-center justify-between border-t border-slate-200/30 pt-6">
-                <div className="flex items-center gap-3">
-                  <img alt="Minh Quân" className="w-8 h-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB44xUd9KEycm-MFka1hw597m92CDiwDKY4KVXnvPXvABl1bjcWMKafw3diZFK5P5YWN8YUT0lXzzceQJDbbBbVlMPeUa9_YQiUNlfrHvXffbPKmAcK50P_grkbWhrKCXnWDLActz5URx-QFFtvDtO24PTWJgYjI4TtnvYcdTPgSIuVoPWRIOvgLB69odQPJI-RSTb-Q7TqjsOz_-OtMZUKIbPNYZrvFXK4DLiO4ssmkcehUfQT9OfDEh3y0KKv2Bddv8k9lPkNkPU"/>
-                  <span className="text-sm font-bold">Minh Quân</span>
-                </div>
-                <button className="bg-[#dadde5] hover:bg-[#8c98ff] hover:text-[#000d79] text-[#595b61] px-5 py-2 rounded-full text-xs font-bold transition-all">
-                  Liên hệ ngay
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
+        ) : posts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">inbox</span>
+            <h3 className="text-lg font-bold text-slate-400 mb-2">Chưa có đồ thất lạc nào</h3>
+            <p className="text-sm text-slate-300">Hiện tại cộng đồng chưa ghi nhận thêm thông tin nào.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {posts.map((post) => {
+              const loc = post.location_lost;
+              const mainImage = post.image_urls?.[0];
+              const reward = post.reward_note || "Thỏa thuận";
 
-          {/* Card 2 */}
-          <div className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
-            <div className="relative h-64 overflow-hidden">
-              <img alt="Cún Golden Lạc" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9ohgKnKpaqrW8HWN__zfPCOG2Ek6J4UCpk0kWNCtaro8YHUmCOTdfxmK78ia_HNcNzdrl7uHZOojU5u_mcdKqaG504mN79pjFD5_uPoT5vPBFeYSdsg2jtd4kslO_KQ1gWne7c1OXL4ucQ1V-meIad4-SsZ77DzFOPYe3EyDiNHLC3kkmXrckijenAS7bSK706jZbhcDjQb-RvyA-XUBXTzDpek2mofcEw8Yx39qgvHxEJb7SNgq4Gv1b2nV2LNdQSfnLtHs4Dtg"/>
-              <div className="absolute top-4 left-4 bg-[#b41340] text-[#ffefef] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                Mất đồ
-              </div>
-              <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-medium">5 giờ trước</div>
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-[#2c2f33] mb-1">Cún Golden Lạc</h3>
-                  <div className="flex items-center gap-2 text-[#595b61] text-sm">
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span>Quận 7, TP. Hồ Chí Minh</span>
+              return (
+                <div key={post.id} className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
+                  <div className="relative h-64 overflow-hidden bg-slate-100">
+                    {mainImage ? (
+                      <img 
+                        alt={post.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                        src={mainImage}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                        <span className="material-symbols-outlined text-5xl text-slate-300">search_off</span>
+                      </div>
+                    )}
+                    <div className="absolute top-4 left-4 bg-[#b41340] text-[#ffefef] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
+                      <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                      Mất đồ
+                    </div>
+                    <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-medium">
+                      {timeAgo(post.created_at)}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 mr-4">
+                        <h3 className="text-xl font-bold text-[#2c2f33] mb-1 line-clamp-1">{post.title}</h3>
+                        <div className="flex items-center gap-2 text-[#595b61] text-sm">
+                          <span className="material-symbols-outlined text-base">location_on</span>
+                          <span className="line-clamp-1">{loc || "Chưa xác định"}</span>
+                        </div>
+                      </div>
+                      <span className="text-[#b41340] font-extrabold text-lg shrink-0">{reward}</span>
+                    </div>
+                    <p className="text-[#595b61] text-sm leading-relaxed mb-6 line-clamp-2">
+                      {post.description}
+                    </p>
+                    <div className="flex items-center justify-between border-t border-slate-200/30 pt-6">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          alt={post.users?.full_name || "User"} 
+                          className="w-8 h-8 rounded-full object-cover" 
+                          src={
+                            post.users?.avatar_url || 
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(post.users?.full_name || "U")}&size=32&background=eff0f7&color=5B6CFF`
+                          }
+                        />
+                        <span className="text-sm font-bold truncate max-w-[120px]">{post.users?.full_name || "Người dùng"}</span>
+                      </div>
+                      <button className="bg-[#3647dc] text-[#f3f1ff] px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02]">
+                        Liên hệ ngay
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <span className="text-[#b41340] font-extrabold text-lg">Hậu tạ cao</span>
-              </div>
-              <p className="text-[#595b61] text-sm leading-relaxed mb-6 line-clamp-2">
-                Bé tên Lu, đi lạc từ sáng nay tại khu dân cư Him Lam. Bé rất hiền và có đeo vòng cổ màu đỏ...
-              </p>
-              <div className="flex items-center justify-between border-t border-slate-200/30 pt-6">
-                <div className="flex items-center gap-3">
-                  <img alt="Thùy Chi" className="w-8 h-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfNJ51ekFuXGp2Kq-vAh0AYp2-sZ9VzSfVR8UkhmnN343oSNjMs48N0midGkqJJ-J3bRkNctY7XMQYTJTi60VxamSbQxAzkWr63LKDnSPz_iXDOanwRYfAiQGCXWNDJviaIvYgURiDKSPZlnwatirr2f9hFYGJ8FsDfvjN8bCWttqV138u0nYgqusvJz-nwd77G-t5XT7ZKw7SUu4oPTZn4zoUSTJHls4sEDmq0YjRXQ7ztqOBK32kSw8VZt5lbaiIVB0279BKQ4Q"/>
-                  <span className="text-sm font-bold">Thùy Chi</span>
-                </div>
-                <button className="bg-[#dadde5] hover:bg-[#8c98ff] hover:text-[#000d79] text-[#595b61] px-5 py-2 rounded-full text-xs font-bold transition-all">
-                  Liên hệ ngay
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
+        )}
 
-          {/* Card 3 */}
-          <div className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
-            <div className="relative h-64 overflow-hidden">
-              <img alt="iPhone 14 Pro Max" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJG4tXh6WG6N8TgFSlW354RrZwRGsVO1WKQu6iF7_aeFX7KRj3O-fmPGxWxE0DH4MTbiulVZHxEmnS0laG6r3OYdaEvr0FZ4Vzk6K6GX911bS0Scz1HLO9_mI4zY6-tS9tTcIYF-xheT8zctOnqPDO9-PeOUUePvJ9GAcxJeD2NfSj9NnRFR1QrIdwz4sS4-HdUIHO8-RvjQwuv5_QWI03OE72WobySZmQrUrWkdT4d2cIwX4tB3uU83-ZV5_I85CQ9nrtyx8Rrh0"/>
-              <div className="absolute top-4 left-4 bg-[#b41340] text-[#ffefef] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                Mất đồ
-              </div>
-              <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-medium">12 giờ trước</div>
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-[#2c2f33] mb-1">iPhone 14 Pro Max</h3>
-                  <div className="flex items-center gap-2 text-[#595b61] text-sm">
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span>Hoàn Kiếm, Hà Nội</span>
-                  </div>
-                </div>
-                <span className="text-[#b41340] font-extrabold text-lg">3.000.000đ</span>
-              </div>
-              <p className="text-[#595b61] text-sm leading-relaxed mb-6 line-clamp-2">
-                Bỏ quên máy tại quán cafe Highland khu vực Bờ Hồ. Máy màu tím, có ốp lưng trong suốt...
-              </p>
-              <div className="flex items-center justify-between border-t border-slate-200/30 pt-6">
-                <div className="flex items-center gap-3">
-                  <img alt="Hoàng Nam" className="w-8 h-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTtCMauHV_CGUFGJIwVR_Vun6XXGl5llC5bKZGkAKsTy464Ibj_k64ylHHW0NC3gPEDkVSx-VKBC3rkRZilxZfDWtJR5Q6h3p_a2QYW1h_1V8P2PxSUU1sM5xwm-vTPO98Ji8pzjr2De2MyFvN_rAyM-JJXyIP0Ww-l7kT5fF79AHWzvEnFn9YSLov8-ENr8zmp57eiA5_Gqikh03J91NdBRMBNI0FGqFhTPc4qj-93J1gtsuoSy6fDngxB9uxOt6OeaQUxaYLvtE"/>
-                  <span className="text-sm font-bold">Hoàng Nam</span>
-                </div>
-                <button className="bg-[#dadde5] hover:bg-[#8c98ff] hover:text-[#000d79] text-[#595b61] px-5 py-2 rounded-full text-xs font-bold transition-all">
-                  Liên hệ ngay
-                </button>
-              </div>
-            </div>
+        {/* Sentinel */}
+        <div ref={sentinelRef} className="h-4 mt-8" />
+        
+        {loading && !initialLoading && (
+          <div className="flex justify-center py-6">
+            <div className="w-8 h-8 border-4 border-[#3647dc] border-t-transparent rounded-full animate-spin" />
           </div>
-
-          {/* Card 4 */}
-          <div className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
-            <div className="relative h-64 overflow-hidden">
-              <img alt="Chùm chìa khóa ô tô" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJDHXX-C3FgZOVuThNS38DMqyYm9TfOb0FjkUMJvoQOxmJqW-c-CIYa2mxRCdRYc1n4xCd1ldbeReoiH5pflnGr46Cg1RcsHzCegIlnXh8KWmxk0WJEh3K_zK-Ty37dv-e7WyAius7-sKHYrh9XcQak3ZohF9M7oyHx_u6GNAHDnY3bJlH-AQhQlr5UudyKShv_l8D41_I7B5Iewr88_vm7Y_O52tJ4IEt56CFXNzF0KooO2FD8vWd5rXl2lM4fkOwP4VcAoEUurE"/>
-              <div className="absolute top-4 left-4 bg-[#b41340] text-[#ffefef] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                Mất đồ
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-[#2c2f33] mb-1">Chùm chìa khóa ô tô</h3>
-                  <div className="flex items-center gap-2 text-[#595b61] text-sm">
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span>Cầu Giấy, Hà Nội</span>
-                  </div>
-                </div>
-                <span className="text-[#b41340] font-extrabold text-lg">Thỏa thuận</span>
-              </div>
-              <p className="text-[#595b61] text-sm leading-relaxed mb-6 line-clamp-2">
-                Đánh rơi chùm chìa khóa xe Mazda có kèm móc khóa hình gấu dâu. Khu vực công viên Nghĩa Đô...
-              </p>
-              <div className="flex items-center justify-between border-t border-slate-200/30 pt-6">
-                <div className="flex items-center gap-3">
-                  <img alt="Lê Hồng" className="w-8 h-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3JgomPVcXD58j5yAYSC9WIMIRbGlwBWsLdWFIcceE3V1691tIIC4udCgP3t5ItqR04kCFsNP6VKw4Wk8CRYZy1O2YFw_0Hm5fXnK8f0Ra6kwt8ivjvFkR31bM1mIS6zdx0A_xkCIJIZEr86cpIuYAjcI17xW12tVUIzhEBWV1cu6f97-pgXm2Rt4V_Qw1ujx3gCy1XVqBWA2yYL5ZtJdgbqL48ZJ9Ld6EUoj2_OLBd-p34FMi2BZjmsSspTzbOTQpu8sBC_0cu5U"/>
-                  <span className="text-sm font-bold">Lê Hồng</span>
-                </div>
-                <button className="bg-[#3647dc] text-[#f3f1ff] px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md">
-                  Liên hệ ngay
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </main>
 
       {/* Right Sidebar */}
