@@ -252,31 +252,31 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn"
     >
       <div
-        className="relative w-full sm:max-w-2xl max-h-[92vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-indigo-900/20 overflow-hidden flex flex-col animate-slideUp"
+        className="relative w-full sm:max-w-2xl max-h-[92vh] bg-[var(--color-bg-card-solid)] rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-indigo-900/20 overflow-hidden flex flex-col animate-slideUp"
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h2 className="text-lg font-extrabold text-[#2c2f33]">Đăng tin mới</h2>
+        <div className="flex items-center justify-between p-5 border-b border-[var(--color-border-subtle)]">
+          <h2 className="text-lg font-extrabold text-[var(--color-text-primary)]">Đăng tin mới</h2>
           <button
             onClick={onClose}
             disabled={submitting}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors disabled:opacity-50"
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-input)] transition-colors disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-slate-500">close</span>
+            <span className="material-symbols-outlined text-[var(--color-text-secondary)]">close</span>
           </button>
         </div>
 
         {/* ── Body (scrollable) ── */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Toggle Lost / Found */}
-          <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+          <div className="flex gap-2 p-1 bg-[var(--color-bg-input)] rounded-2xl">
             <button
               type="button"
               onClick={() => setPostType("lost")}
               className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
                 postType === "lost"
                   ? "bg-[#b41340] text-white shadow-lg shadow-[#b41340]/20"
-                  : "text-slate-500 hover:text-slate-700"
+                  : "text-[var(--color-text-secondary)] hover:text-slate-700"
               }`}
             >
               <span className="material-symbols-outlined text-base align-middle mr-1">search_off</span>
@@ -288,7 +288,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
               className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
                 postType === "found"
                   ? "bg-[#4050bc] text-white shadow-lg shadow-[#4050bc]/20"
-                  : "text-slate-500 hover:text-slate-700"
+                  : "text-[var(--color-text-secondary)] hover:text-slate-700"
               }`}
             >
               <span className="material-symbols-outlined text-base align-middle mr-1">location_on</span>
@@ -298,7 +298,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
               Tiêu đề <span className="text-red-400">*</span>
             </label>
             <input
@@ -306,39 +306,39 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={postType === "lost" ? "Ví dụ: Mất ba lô đen tại thư viện" : "Ví dụ: Nhặt được ví nam tại sân B"}
-              className="w-full px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
+              className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
               maxLength={255}
               required
             />
-            <p className="text-[10px] text-slate-400 mt-1">{title.length}/255 — tối thiểu 10 ký tự</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-1">{title.length}/255 — tối thiểu 10 ký tự</p>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
               Mô tả chi tiết <span className="text-red-400">*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Mô tả đặc điểm nhận dạng, thời gian, hoàn cảnh..."
-              className="w-full px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm resize-none h-28"
+              className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm resize-none h-28"
               required
             />
-            <p className="text-[10px] text-slate-400 mt-1">{description.length} ký tự — tối thiểu 20</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-1">{description.length} ký tự — tối thiểu 20</p>
           </div>
 
           {/* Category + Date — 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Category */}
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
                 Loại đồ vật
               </label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm appearance-none cursor-pointer"
+                className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm appearance-none cursor-pointer"
               >
                 <option value="">— Chọn loại —</option>
                 {categories.map((c) => (
@@ -351,14 +351,14 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
 
             {/* Date */}
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
                 Thời gian <span className="text-red-400">*</span>
               </label>
               <input
                 type="datetime-local"
                 value={incidentDate}
                 onChange={(e) => setIncidentDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
+                className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
                 required
               />
             </div>
@@ -366,7 +366,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
 
           {/* Location */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
               Vị trí {postType === "lost" ? "mất đồ" : "nhặt được"} <span className="text-red-400">*</span>
             </label>
             <div className="flex gap-2">
@@ -375,7 +375,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Thư viện tòa B, Cơ sở A UEH"
-                className="flex-1 px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
+                className="flex-1 px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
                 required
               />
               <button
@@ -396,7 +396,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
 
           {/* Contact Info */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
               Thông tin liên hệ
             </label>
             <input
@@ -404,7 +404,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
               value={contactInfo}
               onChange={(e) => setContactInfo(e.target.value)}
               placeholder="SĐT, Zalo, Facebook... (không bắt buộc)"
-              className="w-full px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
+              className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
             />
           </div>
 
@@ -420,15 +420,15 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
                     onChange={(e) => setIsUrgent(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-[#b41340] transition-colors" />
-                  <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm peer-checked:translate-x-4 transition-transform" />
+                  <div className="w-10 h-6 bg-[var(--color-bg-input-hover)] rounded-full peer-checked:bg-[#b41340] transition-colors" />
+                  <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-[var(--color-bg-card-solid)] rounded-full shadow-sm peer-checked:translate-x-4 transition-transform" />
                 </div>
                 <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-800">🚨 Khẩn cấp</span>
               </label>
 
               {/* Reward note */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
                   Ghi chú thưởng
                 </label>
                 <input
@@ -436,7 +436,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
                   value={rewardNote}
                   onChange={(e) => setRewardNote(e.target.value)}
                   placeholder="Ví dụ: Cảm ơn 200k, mời cafe..."
-                  className="w-full px-4 py-3 rounded-xl bg-[#f5f6fc] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
+                  className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] border border-transparent focus:border-[#5B6CFF] focus:ring-2 focus:ring-[#5B6CFF]/10 outline-none transition-all text-sm"
                   maxLength={255}
                 />
               </div>
@@ -452,8 +452,8 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
                   onChange={(e) => setIsInStorage(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-[#4050bc] transition-colors" />
-                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm peer-checked:translate-x-4 transition-transform" />
+                <div className="w-10 h-6 bg-[var(--color-bg-input-hover)] rounded-full peer-checked:bg-[#4050bc] transition-colors" />
+                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-[var(--color-bg-card-solid)] rounded-full shadow-sm peer-checked:translate-x-4 transition-transform" />
               </div>
               <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-800">
                 📦 Đã nộp vào kho lưu giữ
@@ -463,7 +463,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
 
           {/* ── Image Upload Zone ── */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">
               Ảnh đồ vật ({images.length}/{MAX_IMAGES})
             </label>
 
@@ -482,13 +482,13 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
                 onChange={(e) => e.target.files && addFiles(e.target.files)}
                 className="hidden"
               />
-              <span className="material-symbols-outlined text-4xl text-slate-300 group-hover:text-[#5B6CFF]/60 transition-colors">
+              <span className="material-symbols-outlined text-4xl text-[var(--color-text-muted)] group-hover:text-[#5B6CFF]/60 transition-colors">
                 cloud_upload
               </span>
-              <p className="text-sm text-slate-400 mt-2">
+              <p className="text-sm text-[var(--color-text-muted)] mt-2">
                 Kéo thả hoặc <span className="text-[#5B6CFF] font-semibold">chọn ảnh</span>
               </p>
-              <p className="text-[10px] text-slate-300 mt-1">JPG, PNG, WebP — tối đa 5MB/ảnh</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">JPG, PNG, WebP — tối đa 5MB/ảnh</p>
             </div>
 
             {/* Previews */}
@@ -499,7 +499,7 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
                     <img
                       src={url}
                       alt={`Preview ${i + 1}`}
-                      className="w-20 h-20 object-cover rounded-xl border border-slate-100"
+                      className="w-20 h-20 object-cover rounded-xl border border-[var(--color-border-subtle)]"
                     />
                     <button
                       type="button"
@@ -516,12 +516,12 @@ export default function CreatePostModal({ open, onClose, onSuccess }: CreatePost
         </form>
 
         {/* ── Footer ── */}
-        <div className="p-5 border-t border-slate-100 flex items-center justify-between gap-4">
+        <div className="p-5 border-t border-[var(--color-border-subtle)] flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-6 py-2.5 rounded-full text-sm font-bold text-slate-500 hover:bg-slate-100 transition-all disabled:opacity-50"
+            className="px-6 py-2.5 rounded-full text-sm font-bold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-input)] transition-all disabled:opacity-50"
           >
             Hủy
           </button>

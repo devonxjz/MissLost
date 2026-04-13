@@ -10,10 +10,12 @@ CREATE TYPE post_type_enum AS ENUM ('found', 'lost');
 -- 2. Bảng triggers
 CREATE TABLE triggers (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    -- [NOTE] Polymorphic association: Thuộc tính này trỏ tới 'found_posts' hoặc 'lost_posts' tùy vào 'post_type'. Sẽ kiểm tra thủ công trong logic hàm 'create_trigger'.
     post_id         UUID            NOT NULL,
     post_type       post_type_enum  NOT NULL DEFAULT 'found',
     created_by      UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     target_user_id  UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    finder_user_id  UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     conversation_id UUID            REFERENCES conversations(id),
 
     status          trigger_status  NOT NULL DEFAULT 'pending',
@@ -34,7 +36,7 @@ CREATE UNIQUE INDEX idx_unique_active_trigger
 
 CREATE INDEX idx_triggers_target_user  ON triggers(target_user_id, status);
 CREATE INDEX idx_triggers_created_by   ON triggers(created_by);
-CREATE INDEX idx_triggers_conversation ON triggers(conversation_id);
+CREATE INDEX idx_triggers_conversation ON triggers(conversation_id, status);
 CREATE INDEX idx_triggers_expires      ON triggers(expires_at) WHERE status = 'pending';
 
 
@@ -55,6 +57,7 @@ DECLARE
     v_post_check    UUID;       -- [FIX #1] Biến riêng cho check post
     v_post_title    TEXT;
     v_finder_name   TEXT;
+    v_finder_id     UUID;
     v_post_status   TEXT;
     v_post_owner    UUID;
 BEGIN
@@ -91,9 +94,16 @@ BEGIN
     -- Lấy tên finder
     SELECT full_name INTO v_finder_name FROM users WHERE id = p_created_by;
 
+    -- [FIX #1] Xác định ai là người nhặt (Finder) để cộng điểm
+    IF p_post_type = 'found' THEN
+        v_finder_id := p_created_by;  -- Người nhặt cũng chính là người đăng bài Found
+    ELSE
+        v_finder_id := p_target_user; -- Người đăng bài Lost (Mất đồ), người nhặt là người đang chat cùng (target)
+    END IF;
+
     -- Insert trigger (partial unique index sẽ chặn nếu đã có pending trigger)
-    INSERT INTO triggers (post_id, post_type, created_by, target_user_id, conversation_id, points_awarded)
-    VALUES (p_post_id, p_post_type, p_created_by, p_target_user, p_conversation, p_points)
+    INSERT INTO triggers (post_id, post_type, created_by, target_user_id, finder_user_id, conversation_id, points_awarded)
+    VALUES (p_post_id, p_post_type, p_created_by, p_target_user, v_finder_id, p_conversation, p_points)
     RETURNING id INTO v_trigger_id;
 
     -- Tạo notification cho target user (atomic — cùng transaction)
@@ -106,6 +116,7 @@ BEGIN
         'trigger',
         v_trigger_id
     );
+    -- TODO: Cân nhắc chuyển phần tạo notification này lên Backend xử lý để hỗ trợ đa ngôn ngữ tốt hơn.
 
     RETURN jsonb_build_object(
         'success', true,
@@ -135,6 +146,8 @@ DECLARE
     v_trigger       triggers%ROWTYPE;
     v_points        INT;
     v_balance       INT;
+    v_finder_id     UUID;
+    v_loser_id      UUID;
     v_finder_name   TEXT;
     v_finder_status TEXT;
 BEGIN
@@ -161,8 +174,15 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Trigger đã hết hạn');
     END IF;
 
+    -- Xác định ai là Finder (nhặt) và Loser (mất) dựa vào dữ liệu đã lưu
+    v_finder_id := v_trigger.finder_user_id;
+    v_loser_id  := CASE 
+        WHEN v_trigger.post_type = 'found' THEN v_trigger.target_user_id
+        ELSE v_trigger.created_by
+    END;
+
     -- [FIX #3] Check Finder bị ban → set expired thay vì confirmed, để admin xử lý
-    SELECT status INTO v_finder_status FROM users WHERE id = v_trigger.created_by;
+    SELECT status INTO v_finder_status FROM users WHERE id = v_finder_id;
     IF v_finder_status = 'suspended' THEN
         UPDATE triggers SET status = 'expired' WHERE id = p_trigger_id;
         RETURN jsonb_build_object('success', false, 'error',
@@ -176,39 +196,39 @@ BEGIN
     SET status = 'confirmed', confirmed_at = NOW()
     WHERE id = p_trigger_id;
 
-    -- Step 3: Cộng điểm cho FINDER (created_by)
+    -- Step 3: Cộng điểm cho FINDER
     UPDATE users
     SET training_points = training_points + v_points
-    WHERE id = v_trigger.created_by
+    WHERE id = v_finder_id
     RETURNING training_points INTO v_balance;
 
     -- Step 4: Audit log
     INSERT INTO training_point_logs (user_id, points_delta, reason, balance_after)
     VALUES (
-        v_trigger.created_by,
+        v_finder_id,
         v_points,
         'Trao trả đồ thành công qua trigger #' || p_trigger_id::TEXT,
         v_balance
     );
 
     -- Step 5: Tên Finder cho notification
-    SELECT full_name INTO v_finder_name FROM users WHERE id = v_trigger.created_by;
+    SELECT full_name INTO v_finder_name FROM users WHERE id = v_finder_id;
 
     -- Step 6: Notification cho Finder
     INSERT INTO notifications (user_id, type, title, body, ref_type, ref_id)
     VALUES (
-        v_trigger.created_by,
+        v_finder_id,
         'points_awarded',
         'Bạn được cộng ' || v_points || ' điểm rèn luyện!',
-        'Người dùng đã xác nhận nhận đồ thành công.',
+        'Hệ thống ghi nhận sự giúp đỡ của bạn vì quá trình trao trả đồ thành công.',
         'trigger',
         p_trigger_id
     );
 
-    -- Step 7: Notification cho User
+    -- Step 7: Notification cho Loser
     INSERT INTO notifications (user_id, type, title, body, ref_type, ref_id)
     VALUES (
-        p_user_id,
+        v_loser_id,
         'handover_completed',
         'Cảm ơn bạn đã xác nhận!',
         v_finder_name || ' đã được ghi nhận trao trả thành công.',
@@ -267,6 +287,12 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Trigger đã được xử lý: ' || v_trigger.status::TEXT);
     END IF;
 
+    -- [FIX/NEW] Kiểm tra hết hạn giống confirm_trigger
+    IF v_trigger.expires_at < NOW() THEN
+        UPDATE triggers SET status = 'expired' WHERE id = p_trigger_id;
+        RETURN jsonb_build_object('success', false, 'error', 'Trigger đã hết hạn');
+    END IF;
+
     -- Cancel trigger
     UPDATE triggers
     SET status = 'cancelled', cancelled_at = NOW()
@@ -287,10 +313,27 @@ BEGIN
 
     RETURN jsonb_build_object('success', true, 'trigger_id', p_trigger_id);
 
--- Exception handler
 EXCEPTION
     WHEN OTHERS THEN
         RETURN jsonb_build_object('success', false, 'error', 'Lỗi hệ thống: ' || SQLERRM);
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- ============================================================
+--  [FIX #4] FUNCTION: auto_expire_triggers — Dành cho hệ thống quét (pg_cron hoặc Backend worker)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION auto_expire_triggers() RETURNS INT AS $$
+DECLARE
+    v_count INT;
+BEGIN
+    UPDATE triggers
+    SET status = 'expired'
+    WHERE status = 'pending' AND expires_at < NOW();
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RETURN v_count;
 END;
 $$ LANGUAGE plpgsql;
 

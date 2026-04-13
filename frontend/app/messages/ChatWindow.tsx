@@ -1,7 +1,8 @@
-import { Conversation, Message } from "./types";
+import { Conversation, Message, Trigger } from "./types";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { apiFetch } from "@/app/lib/api";
+import { getSupabase } from "@/app/lib/supabase";
 
 interface ChatWindowProps {
   conversation: Conversation | null;
@@ -11,6 +12,10 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ conversation, messages, currentUserId }: ChatWindowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const [trigger, setTrigger] = useState<Trigger | null>(null);
+  const [triggerLoading, setTriggerLoading] = useState(false);
+  const [triggerActionLoading, setTriggerActionLoading] = useState(false);
 
   // Auto scroll to bottom when messages change
   useEffect(() => {
@@ -19,9 +24,94 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
     }
   }, [messages]);
 
+  // Load and subscribe to trigger
+  useEffect(() => {
+    if (!conversation?.id) {
+      setTrigger(null);
+      return;
+    }
+
+    let isMounted = true;
+    const loadTrigger = async () => {
+      setTriggerLoading(true);
+      try {
+        const triggers = await apiFetch<Trigger[]>(`/triggers/conversation/${conversation.id}`);
+        if (isMounted) {
+          setTrigger(triggers[0] || null);
+        }
+      } catch (err) {
+        console.error("Failed to load triggers", err);
+      } finally {
+        if (isMounted) setTriggerLoading(false);
+      }
+    };
+
+    loadTrigger();
+
+    // Supabase Real-time
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    const supabase = getSupabase(token);
+
+    const channel = supabase.channel(`trigger_changes_${conversation.id}`)
+      .on('postgres_changes', { 
+         event: '*', 
+         schema: 'public', 
+         table: 'triggers', 
+         filter: `conversation_id=eq.${conversation.id}` 
+      }, () => {
+         // Refetch API to get rich nested data (users, points) safely
+         loadTrigger();
+      })
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [conversation?.id]);
+
+  const handleCreateTrigger = async () => {
+    if (!conversation) return;
+    try {
+      setTriggerActionLoading(true);
+      const targetUserId = conversation.user_a_id === currentUserId ? conversation.user_b_id : conversation.user_a_id;
+      
+      await apiFetch('/triggers', {
+        method: 'POST',
+        body: JSON.stringify({
+          post_id: conversation.lost_post_id || conversation.found_post_id,
+          post_type: conversation.found_post_id ? 'found' : 'lost',
+          target_user_id: targetUserId,
+          conversation_id: conversation.id
+        })
+      });
+      // realtime will automatically reload trigger
+    } catch (e: any) {
+      alert("Lỗi: " + e.message);
+    } finally {
+      setTriggerActionLoading(false);
+    }
+  };
+
+  const handleConfirmTrigger = async () => {
+    if (!trigger) return;
+    try {
+      setTriggerActionLoading(true);
+      await apiFetch(`/triggers/${trigger.id}/confirm`, {
+        method: 'POST'
+      });
+      alert('Đã xác nhận trao trả thành công! Điểm rèn luyện đã được cộng.');
+      // realtime will automatically reload trigger
+    } catch (e: any) {
+      alert("Lỗi: " + e.message);
+    } finally {
+      setTriggerActionLoading(false);
+    }
+  };
+
   if (!conversation) {
     return (
-      <section className="flex-1 flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm relative">
+      <section className="flex-1 flex flex-col items-center justify-center bg-[var(--color-bg-card-solid)]/40 backdrop-blur-sm relative">
         <div className="w-20 h-20 mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--color-bg-input)", color: "var(--color-text-muted)" }}>
           <span className="material-symbols-outlined text-4xl">forum</span>
         </div>
@@ -37,15 +127,88 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
   const partnerName = partner?.full_name || "Người dùng ẩn danh";
   const avatarUrl = partner?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=f1f3f9&color=5f6368`;
 
+  const renderTriggerBanner = () => {
+    if (triggerLoading) {
+      return (
+         <div className="flex items-center justify-center w-full my-2">
+            <span className="text-xs text-[var(--color-text-muted)] animate-pulse">Đang tải trạng thái trao trả...</span>
+         </div>
+      );
+    }
+
+    if (!trigger || trigger.status === 'expired' || trigger.status === 'cancelled') {
+        return (
+          <div className="flex items-center justify-between w-full my-2 px-6 py-3 bg-[var(--color-bg-card)] rounded-xl border" style={{borderColor: "var(--color-border-subtle)", borderStyle: "dashed"}}>
+            <span className="text-sm font-medium" style={{color: "var(--color-text-secondary)"}}>
+              Chưa có yêu cầu xác nhận trao trả.
+            </span>
+            <button 
+              onClick={handleCreateTrigger} 
+              disabled={triggerActionLoading}
+              className="px-5 py-2 rounded-full text-xs font-bold uppercase text-white transition-opacity disabled:opacity-50 shadow-md"
+              style={{ backgroundColor: "var(--color-brand)" }}
+            >
+              {triggerActionLoading ? "Đang xử lý..." : "Tạo yêu cầu trao trả"}
+            </button>
+          </div>
+        );
+    }
+
+    if (trigger.status === 'pending') {
+       if (trigger.target?.id === currentUserId) {
+         return (
+           <div className="flex items-center justify-between w-full my-2 px-6 py-4 rounded-xl border bg-green-500/10 border-green-500/30">
+             <div className="flex items-center gap-3">
+               <span className="material-symbols-outlined text-green-600 text-3xl">handshake</span>
+               <div>
+                  <h4 className="text-sm font-bold text-green-700">Yêu cầu xác nhận nhận đồ</h4>
+                  <p className="text-xs text-green-600/80">Vui lòng bấm xác nhận nếu bạn đã nhận lại vật phẩm.</p>
+               </div>
+             </div>
+             <button 
+               onClick={handleConfirmTrigger} 
+               disabled={triggerActionLoading}
+               className="px-5 py-2 rounded-full text-sm font-bold uppercase text-white transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-500/30"
+             >
+               {triggerActionLoading ? "Đang xử lý..." : "Xác nhận & Cảm ơn"}
+             </button>
+           </div>
+         );
+       } else {
+         return (
+           <div className="flex items-center justify-between w-full my-2 px-6 py-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+             <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span className="text-sm font-bold text-amber-700">
+                  Đang chờ {partnerName} xác nhận...
+                </span>
+             </div>
+           </div>
+         );
+       }
+    }
+
+    if (trigger.status === 'confirmed') {
+      return (
+         <div className="flex items-center justify-center gap-2 w-full my-2 px-6 py-4 rounded-xl bg-blue-500/10 border border-blue-500/30 shadow-inner">
+           <span className="material-symbols-outlined text-blue-600 text-2xl">verified</span>
+           <span className="text-sm font-bold text-blue-700">
+             Giao dịch trao trả thành công! Điểm rèn luyện đã được cộng. 🎉
+           </span>
+         </div>
+      );
+    }
+  };
+
   return (
-    <section className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm relative h-full">
+    <section className="flex-1 flex flex-col bg-[var(--color-bg-card-solid)]/40 backdrop-blur-sm relative h-full overflow-hidden">
       {/* Conversation Header */}
-      <div className="p-4 px-8 border-b flex justify-between items-center" style={{ borderColor: "var(--color-border-subtle)", backgroundColor: "var(--color-bg-card)" }}>
+      <div className="p-4 px-8 border-b flex justify-between items-center bg-[var(--color-bg-card)] z-10" style={{ borderColor: "var(--color-border-subtle)" }}>
         <div className="flex items-center gap-4">
           <div className="relative">
-            <img 
-              alt="Avatar" 
-              className="h-10 w-10 rounded-full object-cover border" 
+            <img
+              alt="Avatar"
+              className="h-10 w-10 rounded-full object-cover border"
               style={{ borderColor: "var(--color-border-subtle)" }}
               src={avatarUrl}
             />
@@ -69,10 +232,15 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
         </div>
       </div>
 
+      {/* Trigger Banner Area */}
+      <div className="px-8 pt-4 pb-2 z-10 bg-gradient-to-b from-[var(--color-bg-card)] to-transparent">
+        {renderTriggerBanner()}
+      </div>
+
       {/* Chat Canvas */}
-      <div 
+      <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-8 space-y-6"
+        className="flex-1 overflow-y-auto px-8 pb-8 pt-2 space-y-6"
         style={{ scrollBehavior: 'smooth' }}
       >
         {messages.length === 0 ? (
@@ -82,7 +250,7 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
         ) : (
           messages.map((msg, idx) => {
             const isMe = msg.sender_id === currentUserId;
-            
+
             // System message
             if (msg.message_type === "system") {
               return (
@@ -94,45 +262,30 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
               );
             }
 
-            // Trigger/Handover request message
-            if (msg.message_type === "handover_request") {
-               return (
-                <div key={msg.id} className="flex justify-center w-full my-4">
-                  <div className="max-w-md w-full p-4 rounded-xl border border-dashed flex flex-col items-center gap-2" style={{ backgroundColor: "var(--color-brand-bg)", borderColor: "var(--color-brand)" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "var(--color-brand)" }}>handshake</span>
-                    <p className="font-bold text-sm text-center" style={{ color: "var(--color-text-primary)" }}>{isMe ? "Bạn" : partnerName} đã tạo yêu cầu xác nhận trao trả</p>
-                    <p className="text-xs text-center mb-2" style={{ color: "var(--color-text-secondary)" }}>
-                       {msg.content || "Vui lòng xác nhận rằng bạn đã nhận được đồ vật."}
-                    </p>
-                  </div>
-                </div>
-               );
-            }
-
             // Normal messages
             return (
               <div key={msg.id} className={`flex items-end gap-3 max-w-[80%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}>
                 {!isMe && (
-                  <img 
-                    alt="Avatar" 
-                    className="h-8 w-8 rounded-full object-cover border" 
+                  <img
+                    alt="Avatar"
+                    className="h-8 w-8 rounded-full object-cover border"
                     style={{ borderColor: "var(--color-border-subtle)" }}
                     src={avatarUrl}
                   />
                 )}
-                
+
                 <div className="flex flex-col gap-1">
                   {msg.image_url && (
-                    <img 
-                      src={msg.image_url} 
-                      alt="Attachment" 
+                    <img
+                      src={msg.image_url}
+                      alt="Attachment"
                       className={`max-w-xs rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} object-cover border`}
                       style={{ borderColor: isMe ? "transparent" : "var(--color-border-subtle)" }}
                       loading="lazy"
                     />
                   )}
                   {msg.content && (
-                    <div 
+                    <div
                       className={`p-4 text-sm leading-relaxed rounded-2xl shadow-sm ${isMe ? 'rounded-br-none' : 'rounded-bl-none'}`}
                       style={{
                         backgroundColor: isMe ? "var(--color-brand)" : "var(--color-bg-card)",

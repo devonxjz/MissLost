@@ -16,7 +16,7 @@ export default function ConversationList({
   currentUserId 
 }: ConversationListProps) {
   return (
-    <section className="w-80 flex flex-col border-r border-[#f1f5f9] bg-white/30 backdrop-blur-md transition-colors h-full">
+    <section className="w-80 flex flex-col border-r border-[#f1f5f9] bg-[var(--color-bg-card-solid)]/30 backdrop-blur-md transition-colors h-full">
       <div className="p-6">
         <h1 className="text-2xl font-extrabold tracking-tight mb-2" style={{ color: "var(--color-text-primary)" }}>
           Tin nhắn
@@ -59,7 +59,7 @@ export default function ConversationList({
               <div 
                 key={conv.id}
                 onClick={() => onSelect(conv.id)}
-                className={`p-4 rounded-2xl flex gap-3 cursor-pointer transition-all ${isSelected ? "shadow-sm" : "hover:bg-white/40"}`}
+                className={`p-4 rounded-2xl flex gap-3 cursor-pointer transition-all ${isSelected ? "shadow-sm" : "hover:bg-[var(--color-bg-card-solid)]/40"}`}
                 style={{
                   backgroundColor: isSelected ? "var(--color-bg-card)" : "transparent",
                   border: isSelected ? "1px solid var(--color-border-primary)" : "1px solid transparent"

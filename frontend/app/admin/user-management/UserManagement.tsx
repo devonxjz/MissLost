@@ -210,7 +210,7 @@ export default function UserManagement() {
                                                             ? "bg-indigo-100 text-indigo-700"
                                                             : u.role === "storage_staff"
                                                             ? "bg-amber-100 text-amber-700"
-                                                            : "bg-slate-100 text-slate-600"
+                                                            : "bg-[var(--color-bg-input)] text-slate-600"
                                                     }`}
                                                 >
                                                     {u.role}
@@ -218,7 +218,7 @@ export default function UserManagement() {
                                             </td>
                                             <td className="px-6 py-5">
                                                 <span
-                                                    className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                    className={`inline-flex whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold ${
                                                         u.status === "active"
                                                             ? "bg-emerald-100 text-emerald-700"
                                                             : u.status === "suspended"

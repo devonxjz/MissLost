@@ -53,43 +53,43 @@
 
 /* ── Dark Mode ──────────────────────────────────────── */
 .dark {
-  --color-bg-primary: #0f1117;
-  --color-bg-card: rgba(30, 32, 44, 0.8);
-  --color-bg-card-solid: #1a1c28;
-  --color-bg-input: #252836;
-  --color-bg-input-hover: #2e3142;
-  --color-bg-elevated: #1e2030;
-  --color-bg-nav-mobile: rgba(15, 17, 23, 0.92);
+  --color-bg-primary: #0b0f19;
+  --color-bg-card: rgba(21, 26, 40, 0.85);
+  --color-bg-card-solid: #151a28;
+  --color-bg-input: #1e2538;
+  --color-bg-input-hover: #263045;
+  --color-bg-elevated: #1a2233;
+  --color-bg-nav-mobile: rgba(11, 15, 25, 0.92);
 
-  --color-text-primary: #e4e6ed;
-  --color-text-secondary: #9ca3b4;
-  --color-text-muted: #636b7e;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
   --color-text-on-accent: #ffffff;
 
-  --color-border-primary: rgba(255, 255, 255, 0.06);
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border-input: rgba(255, 255, 255, 0.08);
+  --color-border-primary: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-input: rgba(255, 255, 255, 0.1);
 
-  --color-accent: #6c7bff;
-  --color-accent-hover: #8490ff;
-  --color-accent-soft: rgba(108, 123, 255, 0.08);
-  --color-accent-border: rgba(108, 123, 255, 0.15);
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-accent-soft: rgba(99, 102, 241, 0.1);
+  --color-accent-border: rgba(99, 102, 241, 0.2);
 
-  --color-brand: #8490ff;
-  --color-brand-bg: rgba(108, 123, 255, 0.15);
+  --color-brand: #818cf8;
+  --color-brand-bg: rgba(129, 140, 248, 0.15);
 
-  --color-danger: #ff4d7a;
-  --color-danger-soft: rgba(255, 77, 122, 0.12);
+  --color-danger: #fb7185;
+  --color-danger-soft: rgba(251, 113, 133, 0.12);
 
-  --color-success: #34d97b;
-  --color-success-soft: rgba(52, 217, 123, 0.12);
+  --color-success: #34d399;
+  --color-success-soft: rgba(52, 211, 153, 0.12);
 
-  --color-selection: rgba(108, 123, 255, 0.3);
+  --color-selection: rgba(99, 102, 241, 0.3);
 
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
-  --shadow-header: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-dropdown: 0 10px 40px rgba(0, 0, 0, 0.5);
-  --shadow-button: 0 8px 24px rgba(108, 123, 255, 0.25);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-header: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-button: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
 }
 
 /* ── Base styles ────────────────────────────────────── */

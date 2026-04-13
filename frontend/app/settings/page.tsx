@@ -278,21 +278,21 @@ export default function SettingsPage() {
             >
               {/* Preview mockup */}
               <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border relative" style={{ borderColor: "var(--color-border-subtle)" }}>
-                <div className="absolute inset-0 bg-[#f5f6fc]">
+                <div className="absolute inset-0 bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]">
                   {/* Mini header */}
-                  <div className="h-3 bg-white border-b border-slate-100 flex items-center px-1.5">
+                  <div className="h-3 bg-[var(--color-bg-card-solid)] border-b border-[var(--color-border-subtle)] flex items-center px-1.5">
                     <div className="w-4 h-1 bg-[#5c6cff] rounded-full" />
                   </div>
                   {/* Mini sidebar + content */}
                   <div className="flex h-full pt-0.5">
                     <div className="w-1/4 px-1 pt-1 space-y-0.5">
-                      <div className="h-1 bg-slate-200 rounded-full" />
+                      <div className="h-1 bg-[var(--color-bg-input-hover)] rounded-full" />
                       <div className="h-1 bg-[#5c6cff]/20 rounded-full" />
-                      <div className="h-1 bg-slate-200 rounded-full" />
+                      <div className="h-1 bg-[var(--color-bg-input-hover)] rounded-full" />
                     </div>
                     <div className="flex-1 p-1 space-y-1">
-                      <div className="h-2 bg-white rounded border border-slate-100" />
-                      <div className="h-2 bg-white rounded border border-slate-100" />
+                      <div className="h-2 bg-[var(--color-bg-card-solid)] rounded border border-[var(--color-border-subtle)]" />
+                      <div className="h-2 bg-[var(--color-bg-card-solid)] rounded border border-[var(--color-border-subtle)]" />
                     </div>
                   </div>
                 </div>
@@ -348,9 +348,9 @@ export default function SettingsPage() {
                   {/* Mini sidebar + content */}
                   <div className="flex h-full pt-0.5">
                     <div className="w-1/4 px-1 pt-1 space-y-0.5">
-                      <div className="h-1 bg-white/10 rounded-full" />
+                      <div className="h-1 bg-[var(--color-bg-card-solid)]/10 rounded-full" />
                       <div className="h-1 bg-[#8490ff]/20 rounded-full" />
-                      <div className="h-1 bg-white/10 rounded-full" />
+                      <div className="h-1 bg-[var(--color-bg-card-solid)]/10 rounded-full" />
                     </div>
                     <div className="flex-1 p-1 space-y-1">
                       <div className="h-2 bg-[#1a1c28] rounded border border-white/5" />

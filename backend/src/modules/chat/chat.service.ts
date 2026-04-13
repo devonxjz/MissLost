@@ -13,7 +13,7 @@ export class ChatService {
     const { data, error } = await this.supabase
       .from('conversations')
       .select(`
-        id, last_message_at, created_at,
+        id, last_message_at, created_at, user_a_id, user_b_id, lost_post_id, found_post_id,
         lost_posts(id, title),
         found_posts(id, title),
         user_a:users!conversations_user_a_id_fkey(id, full_name, avatar_url),

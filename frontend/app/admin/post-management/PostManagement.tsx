@@ -398,7 +398,7 @@ export default function PostManagement() {
                             Showing 1-10 of 1,240 posts
                         </p>
                         <div className="flex gap-2">
-                            <button className="p-2 rounded-full bg-white text-on-surface-variant hover:bg-primary hover:text-white shadow-sm transition-all">
+                            <button className="p-2 rounded-full bg-[var(--color-bg-card-solid)] text-on-surface-variant hover:bg-primary hover:text-white shadow-sm transition-all">
                                 <span className="material-symbols-outlined text-sm">
                                     chevron_left
                                 </span>
@@ -406,13 +406,13 @@ export default function PostManagement() {
                             <button className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow-md shadow-primary/20">
                                 1
                             </button>
-                            <button className="w-8 h-8 rounded-full bg-white text-on-surface-variant text-xs font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+                            <button className="w-8 h-8 rounded-full bg-[var(--color-bg-card-solid)] text-on-surface-variant text-xs font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-all">
                                 2
                             </button>
-                            <button className="w-8 h-8 rounded-full bg-white text-on-surface-variant text-xs font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+                            <button className="w-8 h-8 rounded-full bg-[var(--color-bg-card-solid)] text-on-surface-variant text-xs font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-all">
                                 3
                             </button>
-                            <button className="p-2 rounded-full bg-white text-on-surface-variant hover:bg-primary hover:text-white shadow-sm transition-all">
+                            <button className="p-2 rounded-full bg-[var(--color-bg-card-solid)] text-on-surface-variant hover:bg-primary hover:text-white shadow-sm transition-all">
                                 <span className="material-symbols-outlined text-sm">
                                     chevron_right
                                 </span>

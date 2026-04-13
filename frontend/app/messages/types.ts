@@ -34,3 +34,17 @@ export interface Message {
   // Relation
   sender?: User;
 }
+
+export interface Trigger {
+  id: string;
+  post_id: string;
+  post_type: 'found' | 'lost';
+  status: 'pending' | 'confirmed' | 'expired' | 'cancelled';
+  points_awarded: number;
+  confirmed_at?: string;
+  cancelled_at?: string;
+  expires_at?: string;
+  created_at: string;
+  creator?: User;
+  target?: User;
+}
