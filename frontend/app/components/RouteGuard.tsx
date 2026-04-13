@@ -20,7 +20,9 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
     if (role === "admin") {
       // 1. Admin users: ONLY access /admin/ routes
       if (!pathname.startsWith(ADMIN_PREFIX)) {
-        router.replace("/admin");
+        router.replace("/admin/admin-overview");
+      } else if (pathname === "/admin") {
+        router.replace("/admin/admin-overview");
       }
     } else {
       // 2. Non-admin users: Blocked from /admin/ routes

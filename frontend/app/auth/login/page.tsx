@@ -37,7 +37,7 @@ export default function LoginPage() {
       // --- SỬA TẠI ĐÂY: Điều hướng dựa trên role ---
       // Lưu ý: Đảm bảo backend của bạn trả về field `role` trong payload.user
       if (payload.user?.role === "admin") {
-        window.location.href = "/admin"; // Chuyển admin về trang quản trị
+        window.location.href = "/admin/admin-overview"; // Chuyển admin về trang quản trị
       } else {
         window.location.href = "/feeds"; // Chuyển user bình thường về feeds
       }

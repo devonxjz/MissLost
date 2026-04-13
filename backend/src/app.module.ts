@@ -21,6 +21,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { HandoversModule } from './modules/handovers/handovers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { TriggersModule } from './modules/triggers/triggers.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -39,6 +40,7 @@ import { AppService } from './app.service';
     HandoversModule,
     NotificationsModule,
     UploadModule,
+    TriggersModule,
   ],
   controllers: [AppController],
   providers: [
