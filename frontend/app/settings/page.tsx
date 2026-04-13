@@ -32,23 +32,22 @@ export default function SettingsPage() {
         }
         
         // Fetch fresh profile from backend
-        const data = await apiFetch<any>('/users/me');
-        if (data) {
+        const response = await apiFetch<any>('/users/me');
+        // Backend ResponseInterceptor wraps in { data: ... }
+        const data = response?.data ?? response;
+        if (data && data.id) {
+          setUserId(data.id);
           setFullName(data.full_name || "");
           setEmail(data.email || "");
           setBio(data.bio || "");
           setAvatarUrl(data.avatar_url || "");
-          if (data.avatar_url) {
-             // Let's update local storage user if backend returns fresh avatar
-             const rawUser = localStorage.getItem("user");
-             if (rawUser) {
-               const user = JSON.parse(rawUser);
-               user.avatar_url = data.avatar_url;
-               localStorage.setItem("user", JSON.stringify(user));
-               // Dispatch custom event to update Header
-               window.dispatchEvent(new Event("userUpdated"));
-             }
-          }
+
+          // Sync localStorage with fresh data from backend
+          const stored = localStorage.getItem("user");
+          const localUser = stored ? JSON.parse(stored) : {};
+          const merged = { ...localUser, ...data };
+          localStorage.setItem("user", JSON.stringify(merged));
+          window.dispatchEvent(new Event("userUpdated"));
         }
       } catch (err) {
         console.error("Failed to load user:", err);
@@ -83,23 +82,28 @@ export default function SettingsPage() {
         const { uploadFile } = await import("@/app/lib/api");
         const uploadRes = await uploadFile("/upload/image", avatarFile);
         if (uploadRes.url) {
-          setAvatarUrl(uploadRes.url);
-          setAvatarFile(null); // Clear file reference sau khi upload xong
+          const newUrl = uploadRes.url;
+          setAvatarUrl(newUrl);
+          setAvatarFile(null);
 
-          // Sync localStorage ngay với URL mới (không cần gọi thêm API)
-          const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-          localStorage.setItem("user", JSON.stringify({ ...currentUser, avatar_url: uploadRes.url }));
+          // Cập nhật LocalStorage ngay lập tức
+          const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+          storedUser.avatar_url = newUrl;
+          localStorage.setItem("user", JSON.stringify(storedUser));
           window.dispatchEvent(new Event("userUpdated"));
         }
       }
 
       // PATCH profile (không chứa avatar_url — backend đã xử lý)
-      const res = await apiFetch<any>('/users/me', {
+      const patchResponse = await apiFetch<any>('/users/me', {
         method: "PATCH",
         body: JSON.stringify(updates)
       });
 
       setMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
+
+      // Backend ResponseInterceptor wraps in { data: ... }
+      const res = patchResponse?.data ?? patchResponse;
 
       // Sync local storage state if a new token & user are returned
       if (res?.access_token) {
@@ -108,7 +112,11 @@ export default function SettingsPage() {
       if (res?.user) {
         // Merge avatar_url mới (nếu vừa upload) vào user data từ server
         const currentStored = JSON.parse(localStorage.getItem("user") || "{}");
-        const merged = { ...res.user, avatar_url: currentStored.avatar_url || res.user.avatar_url };
+        const merged = { ...currentStored, ...res.user };
+        // Giữ avatar_url mới nhất (từ upload hoặc DB)
+        if (currentStored.avatar_url && !res.user.avatar_url) {
+          merged.avatar_url = currentStored.avatar_url;
+        }
         localStorage.setItem("user", JSON.stringify(merged));
         window.dispatchEvent(new Event("userUpdated"));
       }

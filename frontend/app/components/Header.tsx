@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/app/lib/api";
 
 interface UserInfo {
     full_name?: string;
@@ -11,49 +12,45 @@ interface UserInfo {
 }
 
 export default function Header() {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [user, setUser] = useState<UserInfo | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
-    useEffect(() => {
-        const loadUserFromStorage = () => {
-            try {
+    const loadUserFromStorage = useCallback(() => {
+        try {
+            const stored = localStorage.getItem("user");
+            if (stored) setUser(JSON.parse(stored));
+        } catch { /* ignore */ }
+    }, []);
+
+    const syncUserData = useCallback(async () => {
+        try {
+            const response = await apiFetch<any>("/users/me");
+            // Backend ResponseInterceptor wraps in { data: ... }
+            const freshUser = response?.data ?? response;
+            if (freshUser && freshUser.id) {
+                // Merge với localStorage để giữ lại các field cũ (vd: role từ login)
                 const stored = localStorage.getItem("user");
-                if (stored) setUser(JSON.parse(stored));
-            } catch { /* ignore */ }
-        };
+                const localUser = stored ? JSON.parse(stored) : {};
+                const merged = { ...localUser, ...freshUser };
+                localStorage.setItem("user", JSON.stringify(merged));
+                setUser(merged);
+            }
+        } catch { /* ignore */ }
+    }, []);
 
-        const syncUserFromApi = async () => {
-            try {
-                const token = localStorage.getItem("access_token");
-                if (!token) return;
-
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/users/me`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!res.ok) return;
-
-                const data = await res.json();
-                if (data) {
-                    setUser(data);
-                    // Cập nhật localStorage để đồng bộ
-                    const stored = localStorage.getItem("user");
-                    const current = stored ? JSON.parse(stored) : {};
-                    localStorage.setItem("user", JSON.stringify({ ...current, ...data }));
-                }
-            } catch { /* ignore — không ảnh hưởng UI */ }
-        };
-
-        // 1. Hiển thị ngay từ cache
+    useEffect(() => {
+        // 1. Chạy lần đầu từ cache (giữ data lúc F5)
         loadUserFromStorage();
-        // 2. Đồng bộ dữ liệu mới nhất từ backend (nền)
-        syncUserFromApi();
 
-        // Lắng nghe cập nhật từ trang Settings
+        // 2. Chạy ngầm sync data mới nhất (Step 4)
+        syncUserData();
+
+        // 3. Lắng nghe sự kiện (Step 3)
         window.addEventListener("userUpdated", loadUserFromStorage);
         return () => window.removeEventListener("userUpdated", loadUserFromStorage);
-    }, []);
+    }, [loadUserFromStorage, syncUserData]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
