@@ -133,7 +133,7 @@ export default function AdminOverview() {
                 {/* Success Rate & Pending — Featured Card */}
                 <div className="glass-card p-6 rounded-lg shadow-sm flex flex-col justify-between h-40 lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-primary to-primary-container text-on-primary">
                     <div className="relative z-10 flex justify-between items-start">
-                        <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                        <div className="p-2 bg-[var(--color-bg-card-solid)]/20 rounded-lg backdrop-blur-md">
                             <span className="material-symbols-outlined">trending_up</span>
                         </div>
                         <p className="text-on-primary/80 font-medium">
@@ -199,7 +199,7 @@ export default function AdminOverview() {
                         </p>
                         <a
                             href="/admin/post-management"
-                            className="mt-4 inline-block bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold transition-all"
+                            className="mt-4 inline-block bg-[var(--color-bg-card-solid)]/20 hover:bg-[var(--color-bg-card-solid)]/30 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold transition-all"
                         >
                             Duyệt bài ngay →
                         </a>
@@ -270,7 +270,7 @@ export default function AdminOverview() {
                                                     ? "bg-indigo-100 text-indigo-700"
                                                     : u.role === "storage_staff"
                                                     ? "bg-amber-100 text-amber-700"
-                                                    : "bg-slate-100 text-slate-600"
+                                                    : "bg-[var(--color-bg-input)] text-slate-600"
                                             }`}>
                                                 {u.role}
                                             </span>

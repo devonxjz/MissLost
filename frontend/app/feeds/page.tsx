@@ -145,7 +145,7 @@ export default function FeedsPage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col gap-8 mt-4 mb-8">
         {/* Composer Trigger */}
-        <section className="bg-white/75 backdrop-blur-2xl xl:backdrop-blur-3xl rounded-lg p-6 shadow-sm border border-[#abadb3]/15">
+        <section className="bg-[var(--color-bg-card)] backdrop-blur-2xl xl:backdrop-blur-3xl rounded-lg p-6 shadow-sm border border-[var(--color-border-primary)]">
           <div
             className="flex gap-4 mb-4 cursor-pointer"
             onClick={() => setModalOpen(true)}
@@ -155,7 +155,7 @@ export default function FeedsPage() {
               className="w-10 h-10 rounded-full"
               src="https://ui-avatars.com/api/?name=User&background=f1f3f9&color=5f6368"
             />
-            <div className="flex-1 bg-[#eff0f7] rounded-2xl p-4 h-14 flex items-center text-[#595b61]/50 text-sm hover:bg-[#e8eaf3] transition-colors">
+            <div className="flex-1 bg-[var(--color-bg-input)] rounded-2xl p-4 h-14 flex items-center text-[var(--color-text-secondary)]/50 text-sm hover:bg-[#e8eaf3] transition-colors">
               Bạn đang tìm kiếm gì hoặc nhặt được gì?
             </div>
           </div>
@@ -163,7 +163,7 @@ export default function FeedsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#e0e2ea] text-[#595b61] text-sm font-medium hover:bg-[#dadde5] transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-bg-input-hover)] text-[var(--color-text-secondary)] text-sm font-medium hover:bg-[#dadde5] transition-all"
               >
                 <span className="material-symbols-outlined text-[#3647dc]">
                   image
@@ -172,7 +172,7 @@ export default function FeedsPage() {
               </button>
               <button
                 onClick={() => setModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#e0e2ea] text-[#595b61] text-sm font-medium hover:bg-[#dadde5] transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-bg-input-hover)] text-[var(--color-text-secondary)] text-sm font-medium hover:bg-[#dadde5] transition-all"
               >
                 <span className="material-symbols-outlined text-[#b41340]">
                   location_on
@@ -203,13 +203,13 @@ export default function FeedsPage() {
             {[1, 2, 3, 4].map((i) => (
               <article
                 key={i}
-                className="bg-white/75 backdrop-blur-2xl rounded-lg overflow-hidden flex flex-col border border-[#abadb3]/10 shadow-lg shadow-indigo-500/5"
+                className="bg-[var(--color-bg-card)] backdrop-blur-2xl rounded-lg overflow-hidden flex flex-col border border-[var(--color-border-primary)] shadow-lg shadow-indigo-500/5"
               >
-                <div className="h-64 bg-slate-200 animate-pulse" />
+                <div className="h-64 bg-[var(--color-bg-input-hover)] animate-pulse" />
                 <div className="p-6 space-y-3">
-                  <div className="h-5 w-3/4 bg-slate-200 rounded animate-pulse" />
-                  <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
-                  <div className="h-4 w-2/3 bg-slate-200 rounded animate-pulse" />
+                  <div className="h-5 w-3/4 bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
+                  <div className="h-4 w-full bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
+                  <div className="h-4 w-2/3 bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
                 </div>
               </article>
             ))}
@@ -217,13 +217,13 @@ export default function FeedsPage() {
         ) : posts.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">
+            <span className="material-symbols-outlined text-6xl text-[var(--color-text-muted)] mb-4">
               inbox
             </span>
-            <h3 className="text-lg font-bold text-slate-400 mb-2">
+            <h3 className="text-lg font-bold text-[var(--color-text-muted)] mb-2">
               Chưa có bài đăng nào
             </h3>
-            <p className="text-sm text-slate-300 mb-6">
+            <p className="text-sm text-[var(--color-text-muted)] mb-6">
               Hãy là người đầu tiên đăng tin tìm đồ hoặc thông báo nhặt được!
             </p>
             <button
@@ -244,10 +244,10 @@ export default function FeedsPage() {
               return (
                 <article
                   key={`${post._type}-${post.id}`}
-                  className="bg-white/75 backdrop-blur-2xl rounded-lg overflow-hidden flex flex-col group border border-[#abadb3]/10 shadow-lg shadow-indigo-500/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-shadow"
+                  className="bg-[var(--color-bg-card)] backdrop-blur-2xl rounded-lg overflow-hidden flex flex-col group border border-[var(--color-border-primary)] shadow-lg shadow-indigo-500/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-shadow"
                 >
                   {/* Image */}
-                  <div className="relative h-64 overflow-hidden bg-slate-100">
+                  <div className="relative h-64 overflow-hidden bg-[var(--color-bg-input)]">
                     {mainImage ? (
                       <img
                         alt={post.title}
@@ -257,7 +257,7 @@ export default function FeedsPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-5xl text-slate-200">
+                        <span className="material-symbols-outlined text-5xl text-[var(--color-text-muted)]">
                           {isLost ? "search_off" : "location_on"}
                         </span>
                       </div>
@@ -293,21 +293,21 @@ export default function FeedsPage() {
                   {/* Content */}
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-lg font-bold text-[#2c2f33] leading-tight line-clamp-1 flex-1">
+                      <h3 className="text-lg font-bold text-[var(--color-text-primary)] leading-tight line-clamp-1 flex-1">
                         {post.title}
                       </h3>
-                      <span className="text-xs text-[#595b61] bg-[#e0e2ea] px-2 py-1 rounded shrink-0 ml-2">
+                      <span className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-input-hover)] px-2 py-1 rounded shrink-0 ml-2">
                         {timeAgo(post.created_at)}
                       </span>
                     </div>
 
-                    <p className="text-[#595b61] text-sm mb-4 line-clamp-2 flex-1">
+                    <p className="text-[var(--color-text-secondary)] text-sm mb-4 line-clamp-2 flex-1">
                       {post.description}
                     </p>
 
                     {/* Meta row */}
                     <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 text-sm text-[#595b61] min-w-0">
+                      <div className="flex items-center gap-3 text-sm text-[var(--color-text-secondary)] min-w-0">
                         {loc && (
                           <div className="flex items-center gap-1 min-w-0">
                             <span className="material-symbols-outlined text-base shrink-0">
@@ -336,7 +336,7 @@ export default function FeedsPage() {
                             `https://ui-avatars.com/api/?name=${encodeURIComponent(post.users?.full_name || "U")}&size=24&background=eff0f7&color=5B6CFF`
                           }
                         />
-                        <span className="text-xs font-semibold text-slate-500 hidden sm:inline">
+                        <span className="text-xs font-semibold text-[var(--color-text-secondary)] hidden sm:inline">
                           {post.users?.full_name}
                         </span>
                       </div>
@@ -361,7 +361,7 @@ export default function FeedsPage() {
         {/* End of feed */}
         {!hasMore && posts.length > 0 && (
           <div className="text-center py-8">
-            <p className="text-sm text-slate-300 font-medium">
+            <p className="text-sm text-[var(--color-text-muted)] font-medium">
               — Bạn đã xem hết bài đăng —
             </p>
           </div>
@@ -371,14 +371,14 @@ export default function FeedsPage() {
       {/* Right Sidebar */}
       <aside className="hidden xl:flex flex-col w-80 shrink-0 gap-8 mt-4 mb-8 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto scrollbar-hide pb-4">
         {/* Gần bạn (Map Card) */}
-        <section className="bg-white/75 backdrop-blur-2xl rounded-lg p-6 border border-[#abadb3]/15 shadow-sm">
+        <section className="bg-[var(--color-bg-card)] backdrop-blur-2xl rounded-lg p-6 border border-[var(--color-border-primary)] shadow-sm">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-[#3647dc]">
               near_me
             </span>
             Gần bạn
           </h2>
-          <div className="w-full h-48 rounded-2xl overflow-hidden relative mb-4 bg-slate-100">
+          <div className="w-full h-48 rounded-2xl overflow-hidden relative mb-4 bg-[var(--color-bg-input)]">
             <img
               alt="Map mockup"
               className="w-full h-full object-cover"
@@ -397,13 +397,13 @@ export default function FeedsPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-[#b41340]" />
-              <p className="text-sm text-[#595b61] flex-1">
+              <p className="text-sm text-[var(--color-text-secondary)] flex-1">
                 Có 12 món đồ đang thất lạc gần đây
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-[#4050bc]" />
-              <p className="text-sm text-[#595b61] flex-1">
+              <p className="text-sm text-[var(--color-text-secondary)] flex-1">
                 5 điểm lưu giữ đang hoạt động
               </p>
             </div>
@@ -411,7 +411,7 @@ export default function FeedsPage() {
         </section>
 
         {/* Anh hùng nhặt đồ (Leaderboard) */}
-        <section className="bg-white/75 backdrop-blur-2xl rounded-lg p-6 border border-[#abadb3]/15 shadow-sm">
+        <section className="bg-[var(--color-bg-card)] backdrop-blur-2xl rounded-lg p-6 border border-[var(--color-border-primary)] shadow-sm">
           <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-[#734a90]">
               workspace_premium
@@ -420,7 +420,7 @@ export default function FeedsPage() {
           </h2>
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <span className="text-xl font-black text-[#595b61]/30 w-6">
+              <span className="text-xl font-black text-[var(--color-text-secondary)]/30 w-6">
                 1
               </span>
               <img
@@ -430,7 +430,7 @@ export default function FeedsPage() {
               />
               <div className="flex-1">
                 <h4 className="font-bold text-sm">Minh Anh</h4>
-                <p className="text-xs text-[#595b61]">
+                <p className="text-xs text-[var(--color-text-secondary)]">
                   24 đồ vật đã trả lại
                 </p>
               </div>
@@ -439,7 +439,7 @@ export default function FeedsPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xl font-black text-[#595b61]/30 w-6">
+              <span className="text-xl font-black text-[var(--color-text-secondary)]/30 w-6">
                 2
               </span>
               <img
@@ -449,13 +449,13 @@ export default function FeedsPage() {
               />
               <div className="flex-1">
                 <h4 className="font-bold text-sm">Quốc Trung</h4>
-                <p className="text-xs text-[#595b61]">
+                <p className="text-xs text-[var(--color-text-secondary)]">
                   18 đồ vật đã trả lại
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xl font-black text-[#595b61]/30 w-6">
+              <span className="text-xl font-black text-[var(--color-text-secondary)]/30 w-6">
                 3
               </span>
               <img
@@ -465,13 +465,13 @@ export default function FeedsPage() {
               />
               <div className="flex-1">
                 <h4 className="font-bold text-sm">Hà Phương</h4>
-                <p className="text-xs text-[#595b61]">
+                <p className="text-xs text-[var(--color-text-secondary)]">
                   15 đồ vật đã trả lại
                 </p>
               </div>
             </div>
           </div>
-          <button className="w-full mt-6 py-2 border border-[#abadb3]/30 text-[#595b61] text-sm font-bold rounded-xl hover:bg-[#e6e8ef] transition-all">
+          <button className="w-full mt-6 py-2 border border-[var(--color-border-primary)] text-[var(--color-text-secondary)] text-sm font-bold rounded-xl hover:bg-[#e6e8ef] transition-all">
             Xem tất cả bảng xếp hạng
           </button>
         </section>

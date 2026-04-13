@@ -127,44 +127,44 @@ export default function LostPage() {
     <>
       <main className="flex-1 p-8">
         <header className="mb-12">
-          <h1 className="text-5xl font-extrabold tracking-tighter text-[#2c2f33] mb-2">Đồ Thất Lạc</h1>
-          <p className="text-[#595b61] font-medium text-lg">Hỗ trợ cộng đồng tìm lại những vật dụng quan trọng.</p>
+          <h1 className="text-5xl font-extrabold tracking-tighter text-[var(--color-text-primary)] mb-2">Đồ Thất Lạc</h1>
+          <p className="text-[var(--color-text-secondary)] font-medium text-lg">Hỗ trợ cộng đồng tìm lại những vật dụng quan trọng.</p>
         </header>
 
         {/* Filter Chips */}
         <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           <button className="px-6 py-2 bg-[#3647dc] text-[#f3f1ff] rounded-full font-bold text-sm whitespace-nowrap">Tất cả</button>
-          <button className="px-6 py-2 bg-[#dadde5] text-[#595b61] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Ví & Giấy tờ</button>
-          <button className="px-6 py-2 bg-[#dadde5] text-[#595b61] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Điện thoại</button>
-          <button className="px-6 py-2 bg-[#dadde5] text-[#595b61] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Chìa khóa</button>
-          <button className="px-6 py-2 bg-[#dadde5] text-[#595b61] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Thú cưng</button>
+          <button className="px-6 py-2 bg-[#dadde5] text-[var(--color-text-secondary)] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Ví & Giấy tờ</button>
+          <button className="px-6 py-2 bg-[#dadde5] text-[var(--color-text-secondary)] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Điện thoại</button>
+          <button className="px-6 py-2 bg-[#dadde5] text-[var(--color-text-secondary)] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Chìa khóa</button>
+          <button className="px-6 py-2 bg-[#dadde5] text-[var(--color-text-secondary)] rounded-full font-bold text-sm hover:bg-[#caceff] transition-colors whitespace-nowrap">Thú cưng</button>
         </div>
 
         {/* Bento Grid */}
         {initialLoading ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden border border-white/20">
-                <div className="h-64 bg-slate-200 animate-pulse" />
+              <div key={i} className="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-lg overflow-hidden border border-white/20">
+                <div className="h-64 bg-[var(--color-bg-input-hover)] animate-pulse" />
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-start mb-4">
                     <div className="w-1/2">
-                      <div className="h-6 w-full bg-slate-200 rounded animate-pulse mb-2" />
-                      <div className="h-4 w-3/4 bg-slate-200 rounded animate-pulse" />
+                      <div className="h-6 w-full bg-[var(--color-bg-input-hover)] rounded animate-pulse mb-2" />
+                      <div className="h-4 w-3/4 bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
                     </div>
-                    <div className="h-6 w-1/4 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-6 w-1/4 bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
                   </div>
-                  <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
-                  <div className="h-4 w-2/3 bg-slate-200 rounded animate-pulse" />
+                  <div className="h-4 w-full bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
+                  <div className="h-4 w-2/3 bg-[var(--color-bg-input-hover)] rounded animate-pulse" />
                 </div>
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">inbox</span>
-            <h3 className="text-lg font-bold text-slate-400 mb-2">Chưa có đồ thất lạc nào</h3>
-            <p className="text-sm text-slate-300">Hiện tại cộng đồng chưa ghi nhận thêm thông tin nào.</p>
+            <span className="material-symbols-outlined text-6xl text-[var(--color-text-muted)] mb-4">inbox</span>
+            <h3 className="text-lg font-bold text-[var(--color-text-muted)] mb-2">Chưa có đồ thất lạc nào</h3>
+            <p className="text-sm text-[var(--color-text-muted)]">Hiện tại cộng đồng chưa ghi nhận thêm thông tin nào.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -174,8 +174,8 @@ export default function LostPage() {
               const reward = post.reward_note || "Thỏa thuận";
 
               return (
-                <div key={post.id} className="bg-white/75 backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
-                  <div className="relative h-64 overflow-hidden bg-slate-100">
+                <div key={post.id} className="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/20">
+                  <div className="relative h-64 overflow-hidden bg-[var(--color-bg-input)]">
                     {mainImage ? (
                       <img 
                         alt={post.title} 
@@ -183,12 +183,12 @@ export default function LostPage() {
                         src={mainImage}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                        <span className="material-symbols-outlined text-5xl text-slate-300">search_off</span>
+                      <div className="w-full h-full flex items-center justify-center bg-[var(--color-bg-input-hover)]">
+                        <span className="material-symbols-outlined text-5xl text-[var(--color-text-muted)]">search_off</span>
                       </div>
                     )}
                     <div className="absolute top-4 left-4 bg-[#b41340] text-[#ffefef] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                      <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                      <span className="w-2 h-2 bg-[var(--color-bg-card-solid)] rounded-full animate-pulse"></span>
                       Mất đồ
                     </div>
                     <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-medium">
@@ -198,15 +198,15 @@ export default function LostPage() {
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1 mr-4">
-                        <h3 className="text-xl font-bold text-[#2c2f33] mb-1 line-clamp-1">{post.title}</h3>
-                        <div className="flex items-center gap-2 text-[#595b61] text-sm">
+                        <h3 className="text-xl font-bold text-[var(--color-text-primary)] mb-1 line-clamp-1">{post.title}</h3>
+                        <div className="flex items-center gap-2 text-[var(--color-text-secondary)] text-sm">
                           <span className="material-symbols-outlined text-base">location_on</span>
                           <span className="line-clamp-1">{loc || "Chưa xác định"}</span>
                         </div>
                       </div>
                       <span className="text-[#b41340] font-extrabold text-lg shrink-0">{reward}</span>
                     </div>
-                    <p className="text-[#595b61] text-sm leading-relaxed mb-6 line-clamp-2">
+                    <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-6 line-clamp-2">
                       {post.description}
                     </p>
                     <div className="flex items-center justify-between border-t border-slate-200/30 pt-6">
@@ -255,25 +255,25 @@ export default function LostPage() {
               <span className="material-symbols-outlined text-[#3647dc] cursor-pointer">my_location</span>
             </div>
             <div className="space-y-4">
-              <div className="bg-white/75 backdrop-blur-xl p-4 rounded-xl flex gap-4 hover:scale-[1.02] transition-transform cursor-pointer border border-white/40">
+              <div className="bg-[var(--color-bg-card)] backdrop-blur-xl p-4 rounded-xl flex gap-4 hover:scale-[1.02] transition-transform cursor-pointer border border-white/40">
                 <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
                   <img alt="Balo Laptop xanh" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwH_Rp2L7vfW3a_sYaD9K-gMH6vIXFUsX9uXkdSzHvwvZeLHKz--g6q-f96kdmWhojKaoObVjbxcXp3T6eUMwTs5pEmqjPpu7aqcGUvIt-zIkA3SgTDQ6xQOml-b2bfD1Ou8xOhubWsnquBK1-yMwGrTqPuhXt3wsu67dan9POqqp1ibpaKqjDPFFjB9lH0ogZ6Ji6w-xTEv05F6OA2PFGqgHC5DYxsx9VGYqgnnEMb_iRA5zFqpViZ3QovyGh0ERuTSzIvi42HNU"/>
                 </div>
                 <div className="flex-1">
                   <h4 className="font-bold text-sm line-clamp-1">Balo Laptop xanh</h4>
-                  <p className="text-xs text-[#595b61] flex items-center gap-1 mt-1">
+                  <p className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1 mt-1">
                     <span className="material-symbols-outlined text-xs">distance</span> 200m
                   </p>
                   <span className="text-[10px] bg-[#b41340]/10 text-[#b41340] px-2 py-0.5 rounded-full font-bold mt-2 inline-block">Mất đồ</span>
                 </div>
               </div>
-              <div className="bg-white/75 backdrop-blur-xl p-4 rounded-xl flex gap-4 hover:scale-[1.02] transition-transform cursor-pointer border border-white/40">
+              <div className="bg-[var(--color-bg-card)] backdrop-blur-xl p-4 rounded-xl flex gap-4 hover:scale-[1.02] transition-transform cursor-pointer border border-white/40">
                 <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
                   <img alt="Kính cận gọng đen" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS30lWoz2Y_myJtT5b0jhG8rwEMtnH_tftkpMAedGL0rN6ObaqaUWHzFKtjLNDIFYSxC90-GfoEZF6H7oIoR_VNrznjLRG_1vBrocTaldOKafWvzBH6FCr65zlME6TCyhTtxIKugdtu_kssjC8LbhDLdTRa0GY2HTKmsuqTt-r4OaW1XHGaEdK7IyAx52mMY9k4ffVi0Lds0YBYvlr75MUm-KmHgUDklIFdm4ZvgXRDwctxKO4Q5XqMZOzmJIa_YLCLIY6SswGGZE"/>
                 </div>
                 <div className="flex-1">
                   <h4 className="font-bold text-sm line-clamp-1">Kính cận gọng đen</h4>
-                  <p className="text-xs text-[#595b61] flex items-center gap-1 mt-1">
+                  <p className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1 mt-1">
                     <span className="material-symbols-outlined text-xs">distance</span> 850m
                   </p>
                   <span className="text-[10px] bg-[#b41340]/10 text-[#b41340] px-2 py-0.5 rounded-full font-bold mt-2 inline-block">Mất đồ</span>
@@ -300,12 +300,12 @@ export default function LostPage() {
                   </div>
                   <div>
                     <p className="font-bold text-sm">{hero.name}</p>
-                    <p className="text-xs text-[#595b61]">{hero.count}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{hero.count}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-8 py-3 border border-slate-300/30 rounded-full text-xs font-bold text-[#595b61] hover:bg-[#e0e2ea] transition-colors">
+            <button className="w-full mt-8 py-3 border border-slate-300/30 rounded-full text-xs font-bold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-input-hover)] transition-colors">
               Xem bảng xếp hạng
             </button>
           </section>

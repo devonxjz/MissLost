@@ -51,28 +51,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f6fc] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] relative overflow-hidden">
       <div className="w-full max-w-md mx-4 relative z-10">
         {/* Decorative blobs */}
         <div className="fixed -top-32 -left-32 w-96 h-96 bg-[#3647dc]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="fixed -bottom-32 -right-32 w-[500px] h-[500px] bg-[#caceff]/20 rounded-full blur-3xl pointer-events-none" />
 
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl shadow-[#3647dc]/10 border border-white/60 p-10">
+        <div className="bg-[var(--color-bg-card-solid)]/80 backdrop-blur-2xl rounded-3xl shadow-xl shadow-[#3647dc]/10 border border-white/60 p-10">
 
           {/* Logo */}
           <div className="mb-8 text-center">
             <Link href="/" className="inline-block text-3xl font-black tracking-tighter text-[#5c6cff] hover:text-[#4b5aef] transition-colors">
               MissLost
             </Link>
-            <p className="text-slate-500 text-sm mt-1">Đăng nhập để tiếp tục</p>
+            <p className="text-[var(--color-text-secondary)] text-sm mt-1">Đăng nhập để tiếp tục</p>
           </div>
 
           {/* Social Login */}
           <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
-              className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-[#f8f9ff] text-sm font-semibold text-[#2c2f33] transition-all active:scale-[0.98] shadow-sm"
+              className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl border border-slate-200 bg-[var(--color-bg-card-solid)] hover:bg-[#f8f9ff] text-sm font-semibold text-[var(--color-text-primary)] transition-all active:scale-[0.98] shadow-sm"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
@@ -86,20 +86,20 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs text-slate-400 font-medium">hoặc</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-[var(--color-bg-input-hover)]" />
+            <span className="text-xs text-[var(--color-text-muted)] font-medium">hoặc</span>
+            <div className="flex-1 h-px bg-[var(--color-bg-input-hover)]" />
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Email */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="login-email" className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <label htmlFor="login-email" className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
                 Email
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none select-none">
+                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-lg pointer-events-none select-none">
                   mail
                 </span>
                 <input
@@ -109,7 +109,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full bg-[#f1f3f9] hover:bg-[#e8eaef] focus:bg-white border border-transparent focus:border-[#5c6cff]/40 rounded-2xl py-3 pl-11 pr-4 text-sm text-[#2c2f33] placeholder-[#9aa0a6] outline-none transition-all focus:ring-2 focus:ring-[#5c6cff]/15"
+                  className="w-full bg-[var(--color-bg-input)] hover:bg-[var(--color-bg-input-hover)] focus:bg-[var(--color-bg-card-solid)] border border-transparent focus:border-[#5c6cff]/40 rounded-2xl py-3 pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition-all focus:ring-2 focus:ring-[#5c6cff]/15"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ export default function LoginPage() {
             {/* Password */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="login-password" className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <label htmlFor="login-password" className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
                   Mật khẩu
                 </label>
                 <Link href="/auth/forgot-password" className="text-xs text-[#5c6cff] hover:underline font-medium">
@@ -125,7 +125,7 @@ export default function LoginPage() {
                 </Link>
               </div>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none select-none">
+                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] text-lg pointer-events-none select-none">
                   lock
                 </span>
                 <input
@@ -135,12 +135,12 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-[#f1f3f9] hover:bg-[#e8eaef] focus:bg-white border border-transparent focus:border-[#5c6cff]/40 rounded-2xl py-3 pl-11 pr-12 text-sm text-[#2c2f33] placeholder-[#9aa0a6] outline-none transition-all focus:ring-2 focus:ring-[#5c6cff]/15"
+                  className="w-full bg-[var(--color-bg-input)] hover:bg-[var(--color-bg-input-hover)] focus:bg-[var(--color-bg-card-solid)] border border-transparent focus:border-[#5c6cff]/40 rounded-2xl py-3 pl-11 pr-12 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition-all focus:ring-2 focus:ring-[#5c6cff]/15"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-slate-600 transition-colors"
                   aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 >
                   <span className="material-symbols-outlined text-lg select-none">
@@ -157,7 +157,7 @@ export default function LoginPage() {
                 id="login-remember"
                 className="w-4 h-4 rounded accent-[#3647dc] cursor-pointer"
               />
-              <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors">
+              <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-slate-700 transition-colors">
                 Ghi nhớ đăng nhập
               </span>
             </label>
@@ -181,7 +181,7 @@ export default function LoginPage() {
           </form>
 
           {/* Register link */}
-          <p className="text-center text-sm text-slate-500 mt-6">
+          <p className="text-center text-sm text-[var(--color-text-secondary)] mt-6">
             Chưa có tài khoản?{" "}
             <Link href="/auth/register" className="text-[#5c6cff] font-bold hover:underline">
               Đăng ký ngay
@@ -190,7 +190,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p className="text-center text-xs text-[var(--color-text-muted)] mt-6">
           Bằng cách đăng nhập, bạn đồng ý với{" "}
           <span className="text-[#5c6cff] cursor-pointer hover:underline">Điều khoản dịch vụ</span>
           {" "}và{" "}

@@ -116,7 +116,21 @@ export class TriggersService {
       .order('created_at', { ascending: false });
 
     if (error) throw new ValidationException(error.message);
-    return triggers ?? [];
+
+    const now = new Date();
+    const processedTriggers = triggers?.map(trigger => {
+      if (trigger.status === 'pending' && new Date(trigger.expires_at) < now) {
+        trigger.status = 'expired';
+        // Auto-update db in the background
+        this.supabase.from('triggers')
+          .update({ status: 'expired' })
+          .eq('id', trigger.id)
+          .then();
+      }
+      return trigger;
+    });
+
+    return processedTriggers ?? [];
   }
 
   /**

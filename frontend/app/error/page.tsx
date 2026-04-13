@@ -3,11 +3,11 @@ import Link from 'next/link';
 export default function ErrorPage() {
   return (
     <main className="flex-1 flex justify-center items-center min-h-screen">
-      <section className="max-w-md w-full mx-auto text-center p-8 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg">
-        <h1 className="text-4xl font-extrabold tracking-tight text-[#2c2f33] mb-4">
+      <section className="max-w-md w-full mx-auto text-center p-8 bg-[var(--color-bg-card-solid)]/80 backdrop-blur-xl rounded-2xl shadow-lg">
+        <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] mb-4">
           404 – Không tìm thấy trang
         </h1>
-        <p className="text-[#595b61] text-lg mb-8">
+        <p className="text-[var(--color-text-secondary)] text-lg mb-8">
           Trang bạn đang tìm kiếm không tồn tại hoặc đã được xóa.
         </p>
         <Link
