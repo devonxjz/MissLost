@@ -49,4 +49,31 @@ export class UploadController {
     const url = await this.uploadService.uploadPostImage(file, user.id);
     return { url };
   }
+
+  @Post('image')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Upload ảnh đại diện (max 2MB, jpg/png/webp)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2 MB cho avatar
+          new FileTypeValidator({ fileType: /(jpeg|jpg|png|webp)$/i }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @CurrentUser() user: any,
+  ) {
+    const url = await this.uploadService.uploadAvatar(file, user.id);
+    return { url };
+  }
 }

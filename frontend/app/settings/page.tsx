@@ -10,6 +10,9 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [language, setLanguage] = useState("vi");
@@ -25,6 +28,7 @@ export default function SettingsPage() {
           setUserId(user.id);
           setEmail(user.email || "");
           setFullName(user.full_name || "");
+          setAvatarUrl(user.avatar_url || "");
         }
         
         // Fetch fresh profile from backend
@@ -33,6 +37,18 @@ export default function SettingsPage() {
           setFullName(data.full_name || "");
           setEmail(data.email || "");
           setBio(data.bio || "");
+          setAvatarUrl(data.avatar_url || "");
+          if (data.avatar_url) {
+             // Let's update local storage user if backend returns fresh avatar
+             const rawUser = localStorage.getItem("user");
+             if (rawUser) {
+               const user = JSON.parse(rawUser);
+               user.avatar_url = data.avatar_url;
+               localStorage.setItem("user", JSON.stringify(user));
+               // Dispatch custom event to update Header
+               window.dispatchEvent(new Event("userUpdated"));
+             }
+          }
         }
       } catch (err) {
         console.error("Failed to load user:", err);
@@ -40,6 +56,16 @@ export default function SettingsPage() {
     };
     loadData();
   }, []);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setAvatarPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -51,6 +77,23 @@ export default function SettingsPage() {
       if (password) updates.password = password;
       if (bio !== undefined) updates.bio = bio;
 
+      // Handle Avatar Upload First
+      // Backend tự cập nhật avatar_url vào DB → không cần gửi qua PATCH
+      if (avatarFile) {
+        const { uploadFile } = await import("@/app/lib/api");
+        const uploadRes = await uploadFile("/upload/image", avatarFile);
+        if (uploadRes.url) {
+          setAvatarUrl(uploadRes.url);
+          setAvatarFile(null); // Clear file reference sau khi upload xong
+
+          // Sync localStorage ngay với URL mới (không cần gọi thêm API)
+          const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+          localStorage.setItem("user", JSON.stringify({ ...currentUser, avatar_url: uploadRes.url }));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      }
+
+      // PATCH profile (không chứa avatar_url — backend đã xử lý)
       const res = await apiFetch<any>('/users/me', {
         method: "PATCH",
         body: JSON.stringify(updates)
@@ -63,16 +106,11 @@ export default function SettingsPage() {
         localStorage.setItem("access_token", res.access_token);
       }
       if (res?.user) {
-        localStorage.setItem("user", JSON.stringify(res.user));
-      } else {
-        // Fallback sync
-        const rawUser = localStorage.getItem("user");
-        if (rawUser) {
-          const userObj = JSON.parse(rawUser);
-          userObj.full_name = fullName;
-          userObj.email = email;
-          localStorage.setItem("user", JSON.stringify(userObj));
-        }
+        // Merge avatar_url mới (nếu vừa upload) vào user data từ server
+        const currentStored = JSON.parse(localStorage.getItem("user") || "{}");
+        const merged = { ...res.user, avatar_url: currentStored.avatar_url || res.user.avatar_url };
+        localStorage.setItem("user", JSON.stringify(merged));
+        window.dispatchEvent(new Event("userUpdated"));
       }
       
       setPassword(""); // clear password field after saving
@@ -122,6 +160,27 @@ export default function SettingsPage() {
             <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
               Thông tin cá nhân
             </h2>
+          </div>
+
+          {/* Avatar Upload Section */}
+          <div className="mb-6 flex flex-col items-center sm:flex-row sm:items-start gap-6">
+            <div className="relative group">
+               <img
+                 src={avatarPreview || avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || "User")}&background=f1f3f9&color=5f6368`}
+                 alt="Avatar"
+                 className="w-24 h-24 rounded-full object-cover border-4 border-[var(--color-bg-card)] shadow-md transition-all group-hover:brightness-75"
+               />
+               <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                 <span className="material-symbols-outlined">photo_camera</span>
+                 <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={handleAvatarChange} />
+               </label>
+            </div>
+            <div className="flex flex-col justify-center">
+               <h3 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Ảnh đại diện</h3>
+               <p className="text-xs mt-1 max-w-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                  Định dạng JPG, PNG hoặc WEBP. Dung lượng tối đa 5MB. Nhấn vào ảnh để thay đổi.
+               </p>
+            </div>
           </div>
 
           {message && (

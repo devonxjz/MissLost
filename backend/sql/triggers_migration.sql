@@ -81,8 +81,10 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Bài đăng không tồn tại');
     END IF;
 
-    IF v_post_owner <> p_created_by THEN
-        RETURN jsonb_build_object('success', false, 'error', 'Bạn không phải chủ bài đăng này');
+    -- [FIX] Cho phép cả 2 bên trong cuộc hội thoại tạo trigger (không chỉ chủ bài đăng)
+    -- Chỉ kiểm tra: người tạo hoặc target phải là chủ bài đăng
+    IF v_post_owner <> p_created_by AND v_post_owner <> p_target_user THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Không ai trong cuộc hội thoại là chủ bài đăng này');
     END IF;
 
     -- [FIX #2] Chỉ cho phép tạo trigger khi post đang approved hoặc matched
@@ -91,14 +93,20 @@ BEGIN
             'Bài đăng đang ở trạng thái "' || v_post_status || '", chỉ có thể tạo trigger cho bài đã duyệt');
     END IF;
 
-    -- Lấy tên finder
+    -- Lấy tên người tạo trigger
     SELECT full_name INTO v_finder_name FROM users WHERE id = p_created_by;
 
-    -- [FIX #1] Xác định ai là người nhặt (Finder) để cộng điểm
+    -- [FIX] Xác định ai là người nhặt (Finder) để cộng điểm
+    -- Finder = người đăng bài Found, hoặc người không phải chủ bài Lost
     IF p_post_type = 'found' THEN
-        v_finder_id := p_created_by;  -- Người nhặt cũng chính là người đăng bài Found
+        v_finder_id := v_post_owner;  -- Người nhặt = chủ bài Found
     ELSE
-        v_finder_id := p_target_user; -- Người đăng bài Lost (Mất đồ), người nhặt là người đang chat cùng (target)
+        -- Bài Lost: finder là người KHÔNG phải chủ bài Lost (người nhặt được đồ)
+        IF v_post_owner = p_created_by THEN
+            v_finder_id := p_target_user;
+        ELSE
+            v_finder_id := p_created_by;
+        END IF;
     END IF;
 
     -- Insert trigger (partial unique index sẽ chặn nếu đã có pending trigger)

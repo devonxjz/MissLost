@@ -66,8 +66,8 @@ export class ChatService {
     const { data, error, count } = await this.supabase
       .from('messages')
       .select(`
-        id, content, image_url, message_type, is_read, created_at,
-        users!messages_sender_id_fkey(id, full_name, avatar_url)
+        id, sender_id, content, image_url, message_type, is_read, created_at,
+        sender:users!messages_sender_id_fkey(id, full_name, avatar_url)
       `, { count: 'exact' })
       .eq('conversation_id', conversationId)
       .is('deleted_at', null)
@@ -107,8 +107,8 @@ export class ChatService {
         message_type: dto.message_type ?? 'text',
       })
       .select(`
-        id, content, image_url, message_type, is_read, created_at,
-        users!messages_sender_id_fkey(id, full_name, avatar_url)
+        id, sender_id, content, image_url, message_type, is_read, created_at,
+        sender:users!messages_sender_id_fkey(id, full_name, avatar_url)
       `)
       .single();
 

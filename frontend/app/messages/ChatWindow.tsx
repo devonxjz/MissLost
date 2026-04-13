@@ -1,8 +1,7 @@
 import { Conversation, Message, Trigger } from "./types";
 import { format } from "date-fns";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { apiFetch } from "@/app/lib/api";
-import { getSupabase } from "@/app/lib/supabase";
 
 interface ChatWindowProps {
   conversation: Conversation | null;
@@ -24,51 +23,32 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
     }
   }, [messages]);
 
-  // Load and subscribe to trigger
+  // Load trigger via polling (avoid Supabase realtime — anon key has no permission on triggers table)
+  const loadTrigger = useCallback(async () => {
+    if (!conversation?.id) return;
+    try {
+      const triggers = await apiFetch<Trigger[]>(`/triggers/conversation/${conversation.id}`);
+      setTrigger(triggers[0] || null);
+    } catch (err) {
+      // Silently ignore — user may not have trigger access for some conversations
+      console.warn("Trigger load skipped", err);
+      setTrigger(null);
+    }
+  }, [conversation?.id]);
+
   useEffect(() => {
     if (!conversation?.id) {
       setTrigger(null);
       return;
     }
 
-    let isMounted = true;
-    const loadTrigger = async () => {
-      setTriggerLoading(true);
-      try {
-        const triggers = await apiFetch<Trigger[]>(`/triggers/conversation/${conversation.id}`);
-        if (isMounted) {
-          setTrigger(triggers[0] || null);
-        }
-      } catch (err) {
-        console.error("Failed to load triggers", err);
-      } finally {
-        if (isMounted) setTriggerLoading(false);
-      }
-    };
+    setTriggerLoading(true);
+    loadTrigger().finally(() => setTriggerLoading(false));
 
-    loadTrigger();
-
-    // Supabase Real-time
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    const supabase = getSupabase(token);
-
-    const channel = supabase.channel(`trigger_changes_${conversation.id}`)
-      .on('postgres_changes', { 
-         event: '*', 
-         schema: 'public', 
-         table: 'triggers', 
-         filter: `conversation_id=eq.${conversation.id}` 
-      }, () => {
-         // Refetch API to get rich nested data (users, points) safely
-         loadTrigger();
-      })
-      .subscribe();
-
-    return () => {
-      isMounted = false;
-      supabase.removeChannel(channel);
-    };
-  }, [conversation?.id]);
+    // Poll every 10s instead of Supabase realtime
+    const interval = setInterval(loadTrigger, 10000);
+    return () => clearInterval(interval);
+  }, [conversation?.id, loadTrigger]);
 
   const handleCreateTrigger = async () => {
     if (!conversation) return;
@@ -126,6 +106,10 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
   const partner = conversation.user_a_id === currentUserId ? conversation.user_b : conversation.user_a;
   const partnerName = partner?.full_name || "Người dùng ẩn danh";
   const avatarUrl = partner?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=f1f3f9&color=5f6368`;
+
+  // Current user info for avatar on own messages
+  const currentUserData = conversation.user_a_id === currentUserId ? conversation.user_a : conversation.user_b;
+  const currentUserAvatar = currentUserData?.avatar_url || null;
 
   const renderTriggerBanner = () => {
     if (triggerLoading) {
@@ -262,17 +246,20 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
               );
             }
 
-            // Normal messages
+            // Normal messages — sender avatar from msg.sender relation
+            const senderName = msg.sender?.full_name || (isMe ? "Tôi" : partnerName);
+            const senderAvatar = msg.sender?.avatar_url
+              || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=${isMe ? '4F46E5' : 'f1f3f9'}&color=${isMe ? 'ffffff' : '5f6368'}`;
+
             return (
               <div key={msg.id} className={`flex items-end gap-3 max-w-[80%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}>
-                {!isMe && (
-                  <img
-                    alt="Avatar"
-                    className="h-8 w-8 rounded-full object-cover border"
-                    style={{ borderColor: "var(--color-border-subtle)" }}
-                    src={avatarUrl}
-                  />
-                )}
+                {/* Avatar — show for both sides to distinguish users */}
+                <img
+                  alt={senderName}
+                  className="h-8 w-8 rounded-full object-cover border shrink-0"
+                  style={{ borderColor: isMe ? "var(--color-brand)" : "var(--color-border-subtle)" }}
+                  src={isMe ? (currentUserAvatar || senderAvatar) : senderAvatar}
+                />
 
                 <div className="flex flex-col gap-1">
                   {msg.image_url && (

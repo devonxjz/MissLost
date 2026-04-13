@@ -1,5 +1,4 @@
 "use client";
-
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import useUserRole from "@/app/hooks/useUserRole";
@@ -18,8 +17,11 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
     if (role === undefined) return; // Still loading
 
     if (role === "admin") {
-      // 1. Admin users: ONLY access /admin/ routes
-      if (!pathname.startsWith(ADMIN_PREFIX)) {
+      // 1. Admin users: ONLY access /admin/ routes and /settings
+      const ALLOWED_ADMIN_ROUTES = [ADMIN_PREFIX, "/settings"];
+      const isAllowed = ALLOWED_ADMIN_ROUTES.some(route => pathname.startsWith(route));
+      
+      if (!isAllowed) {
         router.replace("/admin/admin-overview");
       } else if (pathname === "/admin") {
         router.replace("/admin/admin-overview");
@@ -41,7 +43,13 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   if (role === undefined) return null;
 
   // Prevent rendering incorrect layouts during redirection
-  if (role === "admin" && !pathname.startsWith(ADMIN_PREFIX)) return null;
+  // Allow admins to access /admin/* and /settings
+  if (role === "admin") {
+    const ALLOWED_ADMIN_ROUTES = [ADMIN_PREFIX, "/settings"];
+    const isAllowed = ALLOWED_ADMIN_ROUTES.some(route => pathname.startsWith(route));
+    if (!isAllowed) return null;
+  }
+  
   if (role !== "admin" && pathname.startsWith(ADMIN_PREFIX)) return null;
   if (role !== null && role !== "admin" && isAuthPage) return null;
 

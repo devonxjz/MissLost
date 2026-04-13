@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 interface UserInfo {
     full_name?: string;
     email?: string;
+    avatar_url?: string;
 }
 
 export default function Header() {
@@ -16,10 +17,19 @@ export default function Header() {
     const router = useRouter();
 
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem("user");
-            if (stored) setUser(JSON.parse(stored));
-        } catch { /* ignore */ }
+        const loadUserFromStorage = () => {
+            try {
+                const stored = localStorage.getItem("user");
+                if (stored) setUser(JSON.parse(stored));
+            } catch { /* ignore */ }
+        };
+
+        // Initial load
+        loadUserFromStorage();
+
+        // Listen for custom event from settings page
+        window.addEventListener("userUpdated", loadUserFromStorage);
+        return () => window.removeEventListener("userUpdated", loadUserFromStorage);
     }, []);
 
     useEffect(() => {
@@ -101,16 +111,19 @@ export default function Header() {
                             style={{ border: "1px solid var(--color-border-subtle)" }}
                         >
                             <img
-                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || "User")}&background=f1f3f9&color=5f6368`}
+                                src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || "User")}&background=f1f3f9&color=5f6368`}
                                 alt="User avatar"
                                 className="w-full h-full object-cover"
                             />
                         </button>
 
-                        {/* User name & email next to avatar */}
-                        <div className="hidden md:flex flex-col min-w-0">
+                        {/* User name next to avatar */}
+                        <div 
+                            className="flex flex-col min-w-0 cursor-pointer"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        >
                             <span
-                                className="text-sm font-bold truncate max-w-[160px]"
+                                className="text-sm font-bold truncate max-w-[120px] sm:max-w-[160px]"
                                 style={{ color: "var(--color-text-primary)" }}
                             >
                                 {user?.full_name || "Người dùng"}
@@ -133,7 +146,7 @@ export default function Header() {
                                 </div>
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full text-left px-3 py-2.5 text-sm rounded-xl font-bold transition-colors flex items-center gap-3"
+                                    className="w-full text-left px-3 py-2.5 text-sm rounded-xl font-bold flex items-center gap-3 cursor-pointer"
                                     style={{ color: "var(--color-danger)" }}
                                 >
                                     <span className="material-symbols-outlined text-[18px]">logout</span>
