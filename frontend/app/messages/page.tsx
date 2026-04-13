@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import { getSupabase } from "@/app/lib/supabase";
 import { Conversation, Message, User } from "./types";
 import ConversationList from "./ConversationList";
 import ChatWindow from "./ChatWindow";
@@ -62,42 +63,68 @@ export default function MessagesPage() {
   // 3. Fetch Messages for Selected Conversation
   const fetchMessages = useCallback(async (convId: string) => {
     try {
-      // Set page 1 limit 50 for now, could add pagination later
       const data = await apiFetch<any>(`/chat/conversations/${convId}/messages?page=1&limit=50`);
-      // API typically returns latest first if ORDER BY created_at DESC, so we reverse it for UI (oldest top, newest bottom)
+      // Backend already returns oldest→newest (ASC), no need to reverse
       const msgs = Array.isArray(data.data) ? data.data : [];
-      setMessages([...msgs].reverse());
+      setMessages(msgs);
     } catch (err) {
       console.error(`Failed to load messages for ${convId}:`, err);
     }
   }, []);
 
-  // Poll Messages every 3s if there is an active conversation
+  // Supabase Realtime for instant message sync + initial fetch
   useEffect(() => {
     if (!selectedConvId) {
       setMessages([]);
       return;
     }
     
-    // Initial fetch when selected changes
+    // Initial fetch
     fetchMessages(selectedConvId);
 
-    // Setup polling
-    const interval = setInterval(() => {
-      if (selectedConvIdRef.current) {
-        fetchMessages(selectedConvIdRef.current);
-      }
-    }, 3000);
+    // Subscribe to new messages via Supabase Realtime
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    const supabase = getSupabase(token);
 
-    return () => clearInterval(interval);
+    const channel = supabase.channel(`messages_${selectedConvId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${selectedConvId}`,
+      }, () => {
+        // Refetch from API to get full sender relation data
+        if (selectedConvIdRef.current) {
+          fetchMessages(selectedConvIdRef.current);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [selectedConvId, fetchMessages]);
 
 
-  // 4. Send Message Function
+  // 4. Send Message Function with Optimistic UI
   const handleSendMessage = async (content: string, imageUrl?: string) => {
-    if (!selectedConvId) return;
+    if (!selectedConvId || !currentUser) return;
 
-    // Optimistic UI update could go here
+    // Optimistic UI — show message instantly before API responds
+    const optimisticMsg: Message = {
+      id: `temp-${Date.now()}`,
+      conversation_id: selectedConvId,
+      sender_id: currentUser.id,
+      content: content || "",
+      image_url: imageUrl || "",
+      message_type: imageUrl ? 'image' : 'text',
+      is_read: false,
+      read_at: "",
+      created_at: new Date().toISOString(),
+      sender: { id: currentUser.id, full_name: currentUser.full_name || "Tôi" },
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
     try {
       const payload: any = { message_type: imageUrl ? 'image' : 'text' };
       if (content) payload.content = content;
@@ -108,12 +135,14 @@ export default function MessagesPage() {
         body: JSON.stringify(payload)
       });
 
-      // Refetch immediately
+      // Realtime will auto-refresh, but also fetch to be safe
       fetchMessages(selectedConvId);
-      // Also refetch conv list to update last message
+      // Update conv list (last message preview)
       fetchConversations();
     } catch (error) {
       console.error("Error sending message:", error);
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
       throw error;
     }
   };

@@ -141,7 +141,7 @@ export default function FeedsPage() {
 
   /* ── render ── */
   return (
-    <>
+    <div className="flex-1 flex flex-row gap-6">
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col gap-8 mt-4 mb-8">
         {/* Composer Trigger */}
@@ -483,6 +483,6 @@ export default function FeedsPage() {
         onClose={() => setModalOpen(false)}
         onSuccess={handlePostSuccess}
       />
-    </>
+    </div>
   );
 }

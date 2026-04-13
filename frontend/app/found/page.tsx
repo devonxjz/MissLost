@@ -130,7 +130,7 @@ export default function FoundPage() {
   const gridPosts = posts.length > 1 ? posts.slice(1) : [];
 
   return (
-    <>
+    <div className="flex-1 flex flex-row gap-6">
       {/* Main Content */}
       <main className="flex-1 min-h-screen px-6 py-8">
         {/* Header */}
@@ -399,6 +399,6 @@ export default function FoundPage() {
           </section>
         </div>
       </aside>
-    </>
+    </div>
   );
 }

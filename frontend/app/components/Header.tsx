@@ -24,10 +24,33 @@ export default function Header() {
             } catch { /* ignore */ }
         };
 
-        // Initial load
-        loadUserFromStorage();
+        const syncUserFromApi = async () => {
+            try {
+                const token = localStorage.getItem("access_token");
+                if (!token) return;
 
-        // Listen for custom event from settings page
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/users/me`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) return;
+
+                const data = await res.json();
+                if (data) {
+                    setUser(data);
+                    // Cập nhật localStorage để đồng bộ
+                    const stored = localStorage.getItem("user");
+                    const current = stored ? JSON.parse(stored) : {};
+                    localStorage.setItem("user", JSON.stringify({ ...current, ...data }));
+                }
+            } catch { /* ignore — không ảnh hưởng UI */ }
+        };
+
+        // 1. Hiển thị ngay từ cache
+        loadUserFromStorage();
+        // 2. Đồng bộ dữ liệu mới nhất từ backend (nền)
+        syncUserFromApi();
+
+        // Lắng nghe cập nhật từ trang Settings
         window.addEventListener("userUpdated", loadUserFromStorage);
         return () => window.removeEventListener("userUpdated", loadUserFromStorage);
     }, []);

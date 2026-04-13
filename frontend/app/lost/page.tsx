@@ -124,7 +124,7 @@ export default function LostPage() {
   }, [hasMore, loading, page]);
 
   return (
-    <>
+    <div className="flex-1 flex flex-row gap-6">
       <main className="flex-1 p-8">
         <header className="mb-12">
           <h1 className="text-5xl font-extrabold tracking-tighter text-[var(--color-text-primary)] mb-2">Đồ Thất Lạc</h1>
@@ -311,6 +311,6 @@ export default function LostPage() {
           </section>
         </div>
       </aside>
-    </>
+    </div>
   );
 }

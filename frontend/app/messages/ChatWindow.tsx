@@ -19,7 +19,12 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
   // Auto scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      // Use requestAnimationFrame to ensure DOM is fully rendered before scrolling
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      });
     }
   }, [messages]);
 
@@ -221,12 +226,14 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
         {renderTriggerBanner()}
       </div>
 
-      {/* Chat Canvas */}
+      {/* Chat Canvas — messages anchored to bottom like Messenger */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-8 pb-8 pt-2 space-y-6"
-        style={{ scrollBehavior: 'smooth' }}
+        className="flex-1 overflow-y-auto px-8 pb-8 pt-2 flex flex-col"
       >
+        {/* Spacer pushes messages to the bottom when few messages */}
+        <div className="flex-1" />
+        <div className="space-y-4">
         {messages.length === 0 ? (
           <div className="flex justify-center w-full mt-10">
             <p className="text-sm italic" style={{ color: "var(--color-text-muted)" }}>Hãy gửi lời chào đến {partnerName}!</p>
@@ -290,6 +297,7 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
             );
           })
         )}
+        </div>
       </div>
     </section>
   );
