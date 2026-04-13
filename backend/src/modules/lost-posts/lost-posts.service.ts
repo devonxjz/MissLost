@@ -52,7 +52,7 @@ export class LostPostsService {
       .select(`
         id, title, description, location_lost, time_lost, image_urls, status,
         is_urgent, reward_note, view_count, created_at,
-        users!lost_posts_user_id_fkey(full_name, avatar_url),
+        users!lost_posts_user_id_fkey(id, full_name, avatar_url),
         item_categories(name, icon_name)
       `, { count: 'exact' })
       .eq('status', status)

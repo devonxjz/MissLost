@@ -17,7 +17,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   return (
     <>
       <Header />
-      <div className="flex pt-16 px-6 gap-6 max-w-[1600px] mx-auto">
+      <div className="flex pt-16 px-6 gap-6 max-w-[1600px] mx-auto" style={{ backgroundColor: "var(--color-bg-primary)" }}>
         <SideNavBar />
         {children}
       </div>

@@ -47,7 +47,7 @@ export class FoundPostsService {
       .select(`
         id, title, description, location_found, time_found, image_urls,
         status, is_in_storage, view_count, created_at,
-        users!found_posts_user_id_fkey(full_name, avatar_url),
+        users!found_posts_user_id_fkey(id, full_name, avatar_url),
         item_categories(name, icon_name)
       `, { count: 'exact' })
       .eq('status', status)

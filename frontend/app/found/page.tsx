@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 
 interface PostUser {
@@ -54,7 +55,29 @@ export default function FoundPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const LIMIT = 12;
+
+  const handleStartChat = async (opponentId: string, foundPostId: string) => {
+    try {
+      // API backend tạo (hoặc lấy ID) chat. Body có thể thay đổi tùy router DTO
+      const res = await apiFetch<any>('/chat/conversations', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipient_id: opponentId,
+          found_post_id: foundPostId
+        })
+      });
+      // Lấy ID conversation trả về
+      const convId = res?.data?.id || res?.id;
+      if (convId) {
+        router.push(`/messages?conv=${convId}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Không thẻ bắt đầu trò chuyện. Vui lòng đăng nhập.");
+    }
+  };
 
   const loadPosts = useCallback(
     async (pageNum: number, reset = false) => {
@@ -212,7 +235,13 @@ export default function FoundPage() {
                       />
                       <span className="text-sm font-bold text-[#2c2f33] truncate max-w-[120px]">{featuredPost.users?.full_name || "Người dùng"}</span>
                     </div>
-                    <button className="bg-[#3647dc] text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-[#3647dc]/20 hover:shadow-[#3647dc]/40 transition-all">Nhận đồ</button>
+                    <button 
+                      onClick={() => handleStartChat(featuredPost.users?.id as unknown as string, featuredPost.id)}
+                      className="bg-[#3647dc] text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-[#3647dc]/20 hover:shadow-[#3647dc]/40 transition-all flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">chat</span>
+                      Nhắn tin
+                    </button>
                   </div>
                 </div>
               </div>
@@ -275,7 +304,18 @@ export default function FoundPage() {
                       </div>
                       <span className="text-[10px] text-[#595b61] bg-[#e0e2ea] px-2 py-0.5 rounded">{timeAgo(post.created_at)}</span>
                     </div>
-                    <button className="w-full bg-[#e0e2ea] py-3 rounded-xl text-sm font-bold text-[#595b61] hover:bg-[#3647dc] hover:text-white transition-all">Chi tiết</button>
+                    <div className="grid grid-cols-2 gap-2">
+                       <button className="w-full bg-[#e0e2ea] py-3 rounded-xl text-sm font-bold text-[#595b61] hover:bg-[#caceff] transition-all">
+                         Chi tiết
+                       </button>
+                       <button 
+                         onClick={() => handleStartChat(post.users?.id as unknown as string, post.id)}
+                         className="w-full bg-[#3647dc] text-white py-3 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-[#3647dc]/40 transition-all flex items-center justify-center gap-2"
+                       >
+                         <span className="material-symbols-outlined text-[18px]">chat</span>
+                         Nhắn tin
+                       </button>
+                    </div>
                   </div>
                 </div>
               );

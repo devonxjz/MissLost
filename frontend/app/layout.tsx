@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import ClientShell from "@/app/components/ClientShell";
 import RouteGuard from "@/app/components/RouteGuard";
+import ThemeProvider from "@/app/components/ThemeProvider";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin", "vietnamese"],
@@ -21,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className="h-full bg-[#f5f6fc]">
+    <html lang="vi" className="h-full light">
       <head>
         <link
           rel="stylesheet"
@@ -29,11 +30,13 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${plusJakartaSans.variable} font-sans antialiased text-[#2c2f33] bg-[#f5f6fc] min-h-screen selection:bg-[#caceff]/60`}
+        className={`${plusJakartaSans.variable} font-sans antialiased min-h-screen`}
       >
-        <RouteGuard>
-          <ClientShell>{children}</ClientShell>
-        </RouteGuard>
+        <ThemeProvider>
+          <RouteGuard>
+            <ClientShell>{children}</ClientShell>
+          </RouteGuard>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -39,13 +39,21 @@ export default function Header() {
     };
 
     return (
-        <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm shadow-blue-900/5 h-16 flex items-center">
+        <header
+            className="fixed top-0 w-full z-50 backdrop-blur-xl border-b h-16 flex items-center transition-colors duration-300"
+            style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-border-subtle)",
+                boxShadow: "var(--shadow-header)",
+            }}
+        >
             <div className="w-full max-w-[1600px] mx-auto px-6 flex items-center gap-6">
 
                 {/* 1. Brand Logo */}
                 <Link
                     href="/feeds"
-                    className="text-2xl font-black tracking-tighter text-[#5c6cff] shrink-0 hover:text-[#4b5aef] transition-colors"
+                    className="text-2xl font-black tracking-tighter shrink-0 transition-colors"
+                    style={{ color: "var(--color-brand)" }}
                 >
                     MissLost
                 </Link>
@@ -53,13 +61,20 @@ export default function Header() {
                 {/* 2. Search Bar */}
                 <div className="flex-1 max-w-[400px] hidden md:block">
                     <div className="relative group">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9aa0a6] text-lg pointer-events-none">
+                        <span
+                            className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg pointer-events-none"
+                            style={{ color: "var(--color-text-muted)" }}
+                        >
                             search
                         </span>
                         <input
                             type="text"
                             placeholder="Tìm kiếm đồ vật..."
-                            className="w-full bg-[#f1f3f9] hover:bg-[#e8eaef] focus:bg-white border-none rounded-full py-2.5 pl-10 pr-4 text-sm text-[#2c2f33] placeholder-[#9aa0a6] focus:ring-2 focus:ring-[#5c6cff]/20 transition-all outline-none"
+                            className="w-full border-none rounded-full py-2.5 pl-10 pr-4 text-sm transition-all outline-none focus:ring-2"
+                            style={{
+                                backgroundColor: "var(--color-bg-input)",
+                                color: "var(--color-text-primary)",
+                            }}
                         />
                     </div>
                 </div>
@@ -71,7 +86,10 @@ export default function Header() {
                 <div className="flex items-center gap-4 shrink-0">
 
                     {/* Icon Chuông */}
-                    <button className="relative w-9 h-9 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f9] transition-colors shrink-0">
+                    <button
+                        className="relative w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0"
+                        style={{ color: "var(--color-text-muted)" }}
+                    >
                         <span className="material-symbols-outlined text-xl">notifications</span>
                     </button>
 
@@ -79,7 +97,8 @@ export default function Header() {
                     <div className="relative flex items-center gap-3" ref={dropdownRef}>
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 shrink-0 hover:ring-2 hover:ring-[#5c6cff]/50 transition-all flex items-center justify-center cursor-pointer"
+                            className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 transition-all flex items-center justify-center cursor-pointer"
+                            style={{ border: "1px solid var(--color-border-subtle)" }}
                         >
                             <img
                                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || "User")}&background=f1f3f9&color=5f6368`}
@@ -90,22 +109,32 @@ export default function Header() {
 
                         {/* User name & email next to avatar */}
                         <div className="hidden md:flex flex-col min-w-0">
-                            <span className="text-sm font-bold text-[#2c2f33] truncate max-w-[160px]">
+                            <span
+                                className="text-sm font-bold truncate max-w-[160px]"
+                                style={{ color: "var(--color-text-primary)" }}
+                            >
                                 {user?.full_name || "Người dùng"}
                             </span>
-
                         </div>
 
                         {/* Dropdown Menu */}
                         {isDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-xl shadow-[#3647dc]/10 border border-slate-100 p-2 z-50">
-                                <div className="px-3 py-2 border-b border-slate-50 mb-2">
-                                    <p className="text-xs font-semibold text-slate-700">Tài khoản</p>
-                                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{user?.email || ""}</p>
+                            <div
+                                className="absolute right-0 top-full mt-3 w-56 rounded-2xl p-2 z-50 transition-colors duration-300"
+                                style={{
+                                    backgroundColor: "var(--color-bg-card-solid)",
+                                    boxShadow: "var(--shadow-dropdown)",
+                                    border: "1px solid var(--color-border-subtle)",
+                                }}
+                            >
+                                <div className="px-3 py-2 mb-2" style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
+                                    <p className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>Tài khoản</p>
+                                    <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--color-text-muted)" }}>{user?.email || ""}</p>
                                 </div>
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full text-left px-3 py-2.5 text-sm text-[#b41340] hover:bg-[#b41340]/5 rounded-xl font-bold transition-colors flex items-center gap-3"
+                                    className="w-full text-left px-3 py-2.5 text-sm rounded-xl font-bold transition-colors flex items-center gap-3"
+                                    style={{ color: "var(--color-danger)" }}
                                 >
                                     <span className="material-symbols-outlined text-[18px]">logout</span>
                                     Đăng xuất

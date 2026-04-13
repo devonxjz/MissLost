@@ -1,17 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { getSupabaseClient } from '../../config/supabase.config';
 import { CreateTriggerDto } from './dto/trigger.dto';
 import { ValidationException, ForbiddenException, NotFoundException } from '../../common/exceptions/app.exception';
 
+/** JSON trả về từ Postgres function */
+export interface TriggerRpcResult {
+  success: boolean;
+  error?: string;
+  trigger_id?: string;
+  post_title?: string;
+  expires_at?: string;
+  points_awarded?: number;
+  finder_balance?: number;
+}
+
 @Injectable()
 export class TriggersService {
+  private readonly logger = new Logger(TriggersService.name);
+
   private get supabase() {
     return getSupabaseClient();
   }
 
   /**
    * Tạo trigger — atomic qua Postgres function create_trigger()
+   * Validate post ownership + status + notification đều trong 1 transaction
    */
   async create(dto: CreateTriggerDto, userId: string) {
     const { data, error } = await this.supabase.rpc('create_trigger', {
@@ -25,8 +39,7 @@ export class TriggersService {
 
     if (error) throw new ValidationException(error.message);
 
-    const result = data as { success: boolean; error?: string; trigger_id?: string; post_title?: string; expires_at?: string };
-
+    const result = data as TriggerRpcResult;
     if (!result.success) {
       throw new ValidationException(result.error || 'Không thể tạo trigger');
     }
@@ -36,7 +49,7 @@ export class TriggersService {
 
   /**
    * Xác nhận trigger — atomic qua Postgres function confirm_trigger()
-   * Cộng điểm + notification + close post đều trong 1 transaction
+   * SELECT FOR UPDATE + cộng điểm + notification + close post trong 1 transaction
    */
   async confirm(triggerId: string, userId: string) {
     const { data, error } = await this.supabase.rpc('confirm_trigger', {
@@ -46,8 +59,7 @@ export class TriggersService {
 
     if (error) throw new ValidationException(error.message);
 
-    const result = data as { success: boolean; error?: string; trigger_id?: string; points_awarded?: number; finder_balance?: number };
-
+    const result = data as TriggerRpcResult;
     if (!result.success) {
       throw new ValidationException(result.error || 'Không thể xác nhận trigger');
     }
@@ -67,8 +79,7 @@ export class TriggersService {
 
     if (error) throw new ValidationException(error.message);
 
-    const result = data as { success: boolean; error?: string };
-
+    const result = data as TriggerRpcResult;
     if (!result.success) {
       throw new ValidationException(result.error || 'Không thể hủy trigger');
     }
@@ -78,6 +89,7 @@ export class TriggersService {
 
   /**
    * Lấy trigger theo conversation — để chat UI hiển thị trạng thái
+   * Verify user là participant trước khi trả về
    */
   async getByConversation(conversationId: string, userId: string) {
     // Verify user là participant của conversation
@@ -113,15 +125,24 @@ export class TriggersService {
    */
   @Cron('0 */6 * * *')
   async expirePendingTriggers() {
-    const { data, error } = await this.supabase
-      .from('triggers')
-      .update({ status: 'expired' })
-      .eq('status', 'pending')
-      .lt('expires_at', new Date().toISOString())
-      .select('id');
+    try {
+      const { data, error } = await this.supabase
+        .from('triggers')
+        .update({ status: 'expired' })
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString())
+        .select('id');
 
-    if (data && data.length > 0) {
-      console.log(`[Cron] Expired ${data.length} pending triggers`);
+      if (error) {
+        this.logger.error(`Cron expire failed: ${error.message}`);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        this.logger.log(`Expired ${data.length} pending trigger(s)`);
+      }
+    } catch (err) {
+      this.logger.error(`Cron expire error: ${(err as Error).message}`);
     }
   }
 }

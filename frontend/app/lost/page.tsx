@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 
 interface PostUser {
@@ -55,7 +56,27 @@ export default function LostPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const LIMIT = 10;
+
+  const handleStartChat = async (opponentId: string, lostPostId: string) => {
+    try {
+      const res = await apiFetch<any>('/chat/conversations', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipient_id: opponentId,
+          lost_post_id: lostPostId
+        })
+      });
+      const convId = res?.data?.id || res?.id;
+      if (convId) {
+        router.push(`/messages?conv=${convId}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Không thể bắt đầu trò chuyện. Vui lòng đăng nhập.");
+    }
+  };
 
   const loadPosts = useCallback(
     async (pageNum: number, reset = false) => {
@@ -200,8 +221,12 @@ export default function LostPage() {
                         />
                         <span className="text-sm font-bold truncate max-w-[120px]">{post.users?.full_name || "Người dùng"}</span>
                       </div>
-                      <button className="bg-[#3647dc] text-[#f3f1ff] px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02]">
-                        Liên hệ ngay
+                      <button 
+                        onClick={() => handleStartChat(post.users?.id as unknown as string, post.id)}
+                        className="bg-[#3647dc] text-[#f3f1ff] px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02] flex justify-center items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">chat</span>
+                        Nhắn tin ngay
                       </button>
                     </div>
                   </div>

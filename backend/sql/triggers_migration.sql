@@ -52,6 +52,7 @@ CREATE OR REPLACE FUNCTION create_trigger(
 ) RETURNS JSONB AS $$
 DECLARE
     v_trigger_id    UUID;
+    v_post_check    UUID;       -- [FIX #1] Biến riêng cho check post
     v_post_title    TEXT;
     v_finder_name   TEXT;
     v_post_status   TEXT;
@@ -62,16 +63,18 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Không thể tạo trigger cho chính mình');
     END IF;
 
-    -- Validate: kiểm tra bài post tồn tại, đúng chủ, và chưa closed
+    -- Validate: kiểm tra bài post tồn tại, đúng chủ, và trạng thái hợp lệ
     IF p_post_type = 'found' THEN
-        SELECT id, title, status, user_id INTO v_trigger_id, v_post_title, v_post_status, v_post_owner
+        SELECT id, title, status::TEXT, user_id
+        INTO v_post_check, v_post_title, v_post_status, v_post_owner
         FROM found_posts WHERE id = p_post_id;
     ELSE
-        SELECT id, title, status, user_id INTO v_trigger_id, v_post_title, v_post_status, v_post_owner
+        SELECT id, title, status::TEXT, user_id
+        INTO v_post_check, v_post_title, v_post_status, v_post_owner
         FROM lost_posts WHERE id = p_post_id;
     END IF;
 
-    IF v_trigger_id IS NULL THEN
+    IF v_post_check IS NULL THEN
         RETURN jsonb_build_object('success', false, 'error', 'Bài đăng không tồn tại');
     END IF;
 
@@ -79,8 +82,10 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Bạn không phải chủ bài đăng này');
     END IF;
 
-    IF v_post_status = 'closed' THEN
-        RETURN jsonb_build_object('success', false, 'error', 'Bài đăng đã đóng, không thể tạo trigger');
+    -- [FIX #2] Chỉ cho phép tạo trigger khi post đang approved hoặc matched
+    IF v_post_status NOT IN ('approved', 'matched') THEN
+        RETURN jsonb_build_object('success', false, 'error',
+            'Bài đăng đang ở trạng thái "' || v_post_status || '", chỉ có thể tạo trigger cho bài đã duyệt');
     END IF;
 
     -- Lấy tên finder
@@ -91,7 +96,7 @@ BEGIN
     VALUES (p_post_id, p_post_type, p_created_by, p_target_user, p_conversation, p_points)
     RETURNING id INTO v_trigger_id;
 
-    -- Tạo notification cho target user
+    -- Tạo notification cho target user (atomic — cùng transaction)
     INSERT INTO notifications (user_id, type, title, body, ref_type, ref_id)
     VALUES (
         p_target_user,
@@ -112,6 +117,8 @@ BEGIN
 EXCEPTION
     WHEN unique_violation THEN
         RETURN jsonb_build_object('success', false, 'error', 'Đã có yêu cầu xác nhận đang chờ cho bài đăng này');
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Lỗi hệ thống: ' || SQLERRM);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -154,11 +161,12 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Trigger đã hết hạn');
     END IF;
 
-    -- Check Finder bị ban → không cộng điểm
+    -- [FIX #3] Check Finder bị ban → set expired thay vì confirmed, để admin xử lý
     SELECT status INTO v_finder_status FROM users WHERE id = v_trigger.created_by;
     IF v_finder_status = 'suspended' THEN
-        UPDATE triggers SET status = 'confirmed', confirmed_at = NOW() WHERE id = p_trigger_id;
-        RETURN jsonb_build_object('success', false, 'error', 'Người nhặt đồ đã bị khóa tài khoản, không thể cộng điểm');
+        UPDATE triggers SET status = 'expired' WHERE id = p_trigger_id;
+        RETURN jsonb_build_object('success', false, 'error',
+            'Người nhặt đồ đã bị khóa tài khoản. Vui lòng liên hệ admin.');
     END IF;
 
     v_points := v_trigger.points_awarded;
@@ -221,6 +229,11 @@ BEGIN
         'points_awarded', v_points,
         'finder_balance', v_balance
     );
+
+-- [FIX #5] Exception handler cho confirm
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Lỗi hệ thống: ' || SQLERRM);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -234,7 +247,7 @@ CREATE OR REPLACE FUNCTION cancel_trigger(
     p_user_id    UUID
 ) RETURNS JSONB AS $$
 DECLARE
-    v_trigger   triggers%ROWTYPE;
+    v_trigger     triggers%ROWTYPE;
     v_finder_name TEXT;
 BEGIN
     SELECT * INTO v_trigger
@@ -273,33 +286,20 @@ BEGIN
     );
 
     RETURN jsonb_build_object('success', true, 'trigger_id', p_trigger_id);
+
+-- Exception handler
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Lỗi hệ thống: ' || SQLERRM);
 END;
 $$ LANGUAGE plpgsql;
 
 
 -- ============================================================
---  RLS — Row Level Security cho bảng triggers
+--  [FIX #4] KHÔNG dùng RLS với auth.uid() vì app dùng NestJS JWT
+--  Backend dùng service_role key (bypass RLS).
+--  Realtime sẽ dùng polling qua API thay vì subscribe trực tiếp.
 -- ============================================================
 
-ALTER TABLE triggers ENABLE ROW LEVEL SECURITY;
-
--- User chỉ xem trigger liên quan đến mình
-CREATE POLICY triggers_select_own ON triggers
-    FOR SELECT USING (
-        created_by = auth.uid()
-        OR target_user_id = auth.uid()
-    );
-
--- Chỉ cho insert thông qua RPC function (service role bypass RLS)
-CREATE POLICY triggers_insert_deny ON triggers
-    FOR INSERT WITH CHECK (false);
-
-CREATE POLICY triggers_update_deny ON triggers
-    FOR UPDATE USING (false);
-
-
--- ============================================================
---  Bật Supabase Realtime cho bảng triggers
--- ============================================================
-
+-- Bật Supabase Realtime cho bảng triggers (vẫn hoạt động cho service_role)
 ALTER PUBLICATION supabase_realtime ADD TABLE triggers;
