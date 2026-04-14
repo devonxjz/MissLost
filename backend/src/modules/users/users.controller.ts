@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,7 +21,10 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService
+  ) {}
 
   @Get('users/me')
   @ApiOperation({ summary: 'Lấy thông tin cá nhân' })
@@ -30,8 +34,11 @@ export class UsersController {
 
   @Patch('users/me')
   @ApiOperation({ summary: 'Cập nhật thông tin cá nhân' })
-  updateMe(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
-    return this.usersService.updateProfile(user.id, dto);
+  async updateMe(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
+    const updatedUser = await this.usersService.updateProfile(user.id, dto);
+    const payload = { sub: updatedUser.id, email: updatedUser.email, role: updatedUser.role };
+    const access_token = this.jwtService.sign(payload);
+    return { user: updatedUser, access_token };
   }
 
   @Get('users/me/posts')
@@ -44,6 +51,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Lịch sử điểm rèn luyện' })
   getTrainingHistory(@CurrentUser() user: any) {
     return this.usersService.getTrainingHistory(user.id);
+  }
+
+  @Get('users/me/training-score')
+  @ApiOperation({ summary: 'Tổng quan điểm rèn luyện (cho trang Điểm rèn luyện)' })
+  getTrainingScore(@CurrentUser() user: any) {
+    return this.usersService.getTrainingScore(user.id);
   }
 
   @Get('users/:id')

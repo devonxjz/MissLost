@@ -91,7 +91,7 @@ export class AuthService {
     }
 
     const payload = { sub: user.id, email: user.email, role: user.role };
-    const access_token = this.jwtService.sign(payload, { expiresIn: '1h' });
+    const access_token = this.jwtService.sign(payload);
     const refresh_token = uuidv4();
     const refresh_hash = await bcrypt.hash(refresh_token, 10);
 

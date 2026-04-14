@@ -4,6 +4,110 @@
   --font-sans: "Inter", sans-serif;
 }
 
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS — Light & Dark Mode
+   CSS variables applied via .light / .dark class on <html>
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Light Mode (default) ───────────────────────────── */
+:root,
+.light {
+  --color-bg-primary: #f5f6fc;
+  --color-bg-card: rgba(255, 255, 255, 0.75);
+  --color-bg-card-solid: #ffffff;
+  --color-bg-input: #eff0f7;
+  --color-bg-input-hover: #e8eaef;
+  --color-bg-elevated: #ffffff;
+  --color-bg-nav-mobile: rgba(255, 255, 255, 0.9);
+
+  --color-text-primary: #2c2f33;
+  --color-text-secondary: #595b61;
+  --color-text-muted: #9aa0a6;
+  --color-text-on-accent: #ffffff;
+
+  --color-border-primary: rgba(255, 255, 255, 0.2);
+  --color-border-subtle: #f1f5f9;
+  --color-border-input: transparent;
+
+  --color-accent: #3647dc;
+  --color-accent-hover: #4b5aef;
+  --color-accent-soft: rgba(54, 71, 220, 0.05);
+  --color-accent-border: rgba(54, 71, 220, 0.1);
+
+  --color-brand: #5c6cff;
+  --color-brand-bg: rgba(91, 108, 255, 0.15);
+
+  --color-danger: #b41340;
+  --color-danger-soft: rgba(180, 19, 64, 0.1);
+
+  --color-success: #00c853;
+  --color-success-soft: rgba(0, 200, 83, 0.1);
+
+  --color-selection: rgba(202, 206, 255, 0.6);
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-header: 0 1px 3px rgba(30, 64, 175, 0.05);
+  --shadow-dropdown: 0 10px 40px rgba(54, 71, 220, 0.1);
+  --shadow-button: 0 8px 24px rgba(54, 71, 220, 0.3);
+}
+
+/* ── Dark Mode ──────────────────────────────────────── */
+.dark {
+  --color-bg-primary: #0b0f19;
+  --color-bg-card: rgba(21, 26, 40, 0.85);
+  --color-bg-card-solid: #151a28;
+  --color-bg-input: #1e2538;
+  --color-bg-input-hover: #263045;
+  --color-bg-elevated: #1a2233;
+  --color-bg-nav-mobile: rgba(11, 15, 25, 0.92);
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-on-accent: #ffffff;
+
+  --color-border-primary: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-input: rgba(255, 255, 255, 0.1);
+
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-accent-soft: rgba(99, 102, 241, 0.1);
+  --color-accent-border: rgba(99, 102, 241, 0.2);
+
+  --color-brand: #818cf8;
+  --color-brand-bg: rgba(129, 140, 248, 0.15);
+
+  --color-danger: #fb7185;
+  --color-danger-soft: rgba(251, 113, 133, 0.12);
+
+  --color-success: #34d399;
+  --color-success-soft: rgba(52, 211, 153, 0.12);
+
+  --color-selection: rgba(99, 102, 241, 0.3);
+
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-header: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-button: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+}
+
+/* ── Base styles ────────────────────────────────────── */
+html {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+::selection {
+  background-color: var(--color-selection);
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

@@ -180,4 +180,187 @@ export class AiMatchesService {
       items_in_storage: itemsInStorage.count ?? 0,
     };
   }
+
+  // Admin: enhanced dashboard stats — status breakdown, trends, activity
+  async getEnhancedDashboardStats() {
+    const supabase = this.supabase;
+
+    // --- Status breakdown for all posts ---
+    const statusList = ['pending', 'approved', 'rejected', 'matched', 'closed'];
+    const lostByStatus: Record<string, number> = {};
+    const foundByStatus: Record<string, number> = {};
+
+    await Promise.all(
+      statusList.map(async (s) => {
+        const [lr, fr] = await Promise.all([
+          supabase.from('lost_posts').select('*', { count: 'exact', head: true }).eq('status', s),
+          supabase.from('found_posts').select('*', { count: 'exact', head: true }).eq('status', s),
+        ]);
+        lostByStatus[s] = lr.count ?? 0;
+        foundByStatus[s] = fr.count ?? 0;
+      }),
+    );
+
+    // --- Total counts ---
+    const totalLost = Object.values(lostByStatus).reduce((a, b) => a + b, 0);
+    const totalFound = Object.values(foundByStatus).reduce((a, b) => a + b, 0);
+
+    // --- Recent 10 posts (mixed lost+found) for activity feed ---
+    const [recentLost, recentFound] = await Promise.all([
+      supabase
+        .from('lost_posts')
+        .select('id, title, status, created_at, users!lost_posts_user_id_fkey(full_name, avatar_url), item_categories(name)')
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('found_posts')
+        .select('id, title, status, created_at, users!found_posts_user_id_fkey(full_name, avatar_url), item_categories(name)')
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ]);
+
+    const recentPosts = [
+      ...(recentLost.data ?? []).map((p: any) => ({ ...p, post_type: 'lost' })),
+      ...(recentFound.data ?? []).map((p: any) => ({ ...p, post_type: 'found' })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
+
+    // --- Top categories (from both tables) ---
+    const [lostCats, foundCats] = await Promise.all([
+      supabase.from('lost_posts').select('item_categories(name)').not('category_id', 'is', null),
+      supabase.from('found_posts').select('item_categories(name)').not('category_id', 'is', null),
+    ]);
+
+    const catCount: Record<string, number> = {};
+    [...(lostCats.data ?? []), ...(foundCats.data ?? [])].forEach((p: any) => {
+      const name = p.item_categories?.name ?? 'Khác';
+      catCount[name] = (catCount[name] ?? 0) + 1;
+    });
+
+    const topCategories = Object.entries(catCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([name, count]) => ({ name, count }));
+
+    // --- Recent handovers ---
+    const { data: recentHandovers } = await supabase
+      .from('handovers')
+      .select('id, status, handover_location, completed_at, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // --- User stats ---
+    const [activeUsers, suspendedUsers, pendingUsers] = await Promise.all([
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'suspended'),
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'pending_verify'),
+    ]);
+
+    return {
+      posts: {
+        lost: { total: totalLost, by_status: lostByStatus },
+        found: { total: totalFound, by_status: foundByStatus },
+        total: totalLost + totalFound,
+      },
+      users: {
+        active: activeUsers.count ?? 0,
+        suspended: suspendedUsers.count ?? 0,
+        pending_verify: pendingUsers.count ?? 0,
+        total: (activeUsers.count ?? 0) + (suspendedUsers.count ?? 0) + (pendingUsers.count ?? 0),
+      },
+      recent_posts: recentPosts,
+      top_categories: topCategories,
+      recent_handovers: recentHandovers ?? [],
+    };
+  }
+
+  // Admin: list all posts (lost + found) with filters and pagination
+  async listAllPosts(filters: {
+    type?: 'all' | 'lost' | 'found';
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const supabase = this.supabase;
+    const { type = 'all', status, search, page = 1, limit = 20 } = filters;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const results: any[] = [];
+    let totalCount = 0;
+
+    if (type === 'all' || type === 'lost') {
+      let q = supabase
+        .from('lost_posts')
+        .select(`
+          id, title, description, location_lost, time_lost, image_urls, status,
+          is_urgent, view_count, created_at,
+          users!lost_posts_user_id_fkey(id, full_name, avatar_url),
+          item_categories(name, icon_name)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false });
+
+      if (status) q = q.eq('status', status);
+      if (search) q = q.ilike('title', `%${search}%`);
+
+      if (type === 'lost') {
+        q = q.range(from, to);
+      }
+
+      const { data, count } = await q;
+      const mapped = (data ?? []).map((p: any) => ({
+        ...p,
+        post_type: 'lost',
+        location: p.location_lost,
+        time_event: p.time_lost,
+      }));
+      results.push(...mapped);
+      totalCount += count ?? 0;
+    }
+
+    if (type === 'all' || type === 'found') {
+      let q = supabase
+        .from('found_posts')
+        .select(`
+          id, title, description, location_found, time_found, image_urls, status,
+          is_in_storage, view_count, created_at,
+          users!found_posts_user_id_fkey(id, full_name, avatar_url),
+          item_categories(name, icon_name)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false });
+
+      if (status) q = q.eq('status', status);
+      if (search) q = q.ilike('title', `%${search}%`);
+
+      if (type === 'found') {
+        q = q.range(from, to);
+      }
+
+      const { data, count } = await q;
+      const mapped = (data ?? []).map((p: any) => ({
+        ...p,
+        post_type: 'found',
+        location: p.location_found,
+        time_event: p.time_found,
+      }));
+      results.push(...mapped);
+      totalCount += count ?? 0;
+    }
+
+    // Sort merged results by created_at desc
+    results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Apply pagination for "all" type
+    const paginated = type === 'all' ? results.slice(from, to + 1) : results;
+
+    return {
+      data: paginated,
+      meta: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  }
 }

@@ -19,7 +19,7 @@ export class FoundPostsService {
   async create(dto: CreateFoundPostDto, userId: string) {
     const { data, error } = await this.supabase
       .from('found_posts')
-      .insert({ ...dto, user_id: userId, status: 'pending' })
+      .insert({ ...dto, user_id: userId, status: 'approved' })
       .select('*')
       .single();
 
@@ -29,7 +29,7 @@ export class FoundPostsService {
       post_type: 'found',
       post_id: data.id,
       old_status: null,
-      new_status: 'pending',
+      new_status: 'approved',
       changed_by: userId,
       note: 'Bài đăng mới tạo',
     });
@@ -47,7 +47,7 @@ export class FoundPostsService {
       .select(`
         id, title, description, location_found, time_found, image_urls,
         status, is_in_storage, view_count, created_at,
-        users!found_posts_user_id_fkey(full_name, avatar_url),
+        users!found_posts_user_id_fkey(id, full_name, avatar_url),
         item_categories(name, icon_name)
       `, { count: 'exact' })
       .eq('status', status)
@@ -69,7 +69,7 @@ export class FoundPostsService {
   async findMyPosts(userId: string) {
     const { data, error } = await this.supabase
       .from('found_posts')
-      .select('id, title, status, created_at, item_categories(name, icon_name)')
+      .select('id, title, description, image_urls, view_count, status, created_at, item_categories(name, icon_name)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 

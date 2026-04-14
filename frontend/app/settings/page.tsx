@@ -1,122 +1,460 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/app/lib/api";
+import { useTheme } from "@/app/components/ThemeProvider";
+
 export default function SettingsPage() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [language, setLanguage] = useState("vi");
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    // 1. Load user data into UI via Backend API
+    const loadData = async () => {
+      try {
+        const rawUser = localStorage.getItem("user");
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
+          setUserId(user.id);
+          setEmail(user.email || "");
+          setFullName(user.full_name || "");
+          setAvatarUrl(user.avatar_url || "");
+        }
+
+        // Fetch fresh profile from backend
+        const response = await apiFetch<any>('/users/me');
+        // Backend ResponseInterceptor wraps in { data: ... }
+        const data = response?.data ?? response;
+        if (data && data.id) {
+          setUserId(data.id);
+          setFullName(data.full_name || "");
+          setEmail(data.email || "");
+          setBio(data.bio || "");
+          setAvatarUrl(data.avatar_url || "");
+
+          // Sync localStorage with fresh data from backend
+          const stored = localStorage.getItem("user");
+          const localUser = stored ? JSON.parse(stored) : {};
+          const merged = { ...localUser, ...data };
+          localStorage.setItem("user", JSON.stringify(merged));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      } catch (err) {
+        console.error("Failed to load user:", err);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setAvatarPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    setMessage(null);
+    try {
+      const updates: any = {};
+      if (fullName) updates.full_name = fullName;
+      if (email) updates.email = email;
+      if (password) updates.password = password;
+      if (bio !== undefined) updates.bio = bio;
+
+      // Handle Avatar Upload First
+      // Backend tự cập nhật avatar_url vào DB → không cần gửi qua PATCH
+      if (avatarFile) {
+        const { uploadFile } = await import("@/app/lib/api");
+        const uploadRes = await uploadFile("/upload/image", avatarFile);
+        if (uploadRes.url) {
+          const newUrl = uploadRes.url;
+          setAvatarUrl(newUrl);
+          setAvatarFile(null);
+
+          // Cập nhật LocalStorage ngay lập tức
+          const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+          storedUser.avatar_url = newUrl;
+          localStorage.setItem("user", JSON.stringify(storedUser));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      }
+
+      // PATCH profile (không chứa avatar_url — backend đã xử lý)
+      const patchResponse = await apiFetch<any>('/users/me', {
+        method: "PATCH",
+        body: JSON.stringify(updates)
+      });
+
+      setMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
+
+      // Backend ResponseInterceptor wraps in { data: ... }
+      const res = patchResponse?.data ?? patchResponse;
+
+      // Sync local storage state if a new token & user are returned
+      if (res?.access_token) {
+        localStorage.setItem("access_token", res.access_token);
+      }
+      if (res?.user) {
+        // Merge avatar_url mới (nếu vừa upload) vào user data từ server
+        const currentStored = JSON.parse(localStorage.getItem("user") || "{}");
+        const merged = { ...currentStored, ...res.user };
+        // Giữ avatar_url mới nhất (từ upload hoặc DB)
+        if (currentStored.avatar_url && !res.user.avatar_url) {
+          merged.avatar_url = currentStored.avatar_url;
+        }
+        localStorage.setItem("user", JSON.stringify(merged));
+        window.dispatchEvent(new Event("userUpdated"));
+      }
+
+      setPassword(""); // clear password field after saving
+    } catch (err: any) {
+      console.error(err);
+      setMessage({ type: "error", text: err.message || "Đã xảy ra lỗi" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <main className="flex-1 p-10">
       <header className="mb-12">
-        <h1 className="text-4xl font-extrabold tracking-tight text-[#2c2f33] mb-2">Cài đặt hệ thống</h1>
-        <p className="text-[#595b61] leading-relaxed max-w-2xl">Quản lý tài khoản của bạn, cập nhật thông báo và điều chỉnh bảo mật để có trải nghiệm MissLost tốt nhất.</p>
+        <h1
+          className="text-4xl font-extrabold tracking-tight mb-2"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          Cài đặt hệ thống
+        </h1>
+        <p
+          className="leading-relaxed max-w-2xl"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          Quản lý tài khoản của bạn, cập nhật thông báo và điều chỉnh bảo mật để có trải nghiệm MissLost tốt nhất.
+        </p>
       </header>
 
       {/* Bento Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Profile Card */}
-        <section className="lg:col-span-8 bg-white/75 backdrop-blur-xl p-8 rounded-lg shadow-sm border border-white/20">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#3647dc]/10 flex items-center justify-center text-[#3647dc]">
+        <section
+          className="lg:col-span-8 backdrop-blur-xl p-8 rounded-lg transition-colors duration-300"
+          style={{
+            backgroundColor: "var(--color-bg-card)",
+            boxShadow: "var(--shadow-card)",
+            border: "1px solid var(--color-border-primary)",
+          }}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: "var(--color-accent-soft)", color: "var(--color-accent)" }}
+            >
               <span className="material-symbols-outlined text-3xl">person</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">Thông tin cá nhân</h2>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
+              Thông tin cá nhân
+            </h2>
           </div>
+
+          {/* Avatar Upload Section */}
+          <div className="mb-6 flex flex-col items-center sm:flex-row sm:items-start gap-6">
+            <div className="relative group">
+              <img
+                src={avatarPreview || avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || "User")}&background=f1f3f9&color=5f6368`}
+                alt="Avatar"
+                className="w-24 h-24 rounded-full object-cover border-4 border-[var(--color-bg-card)] shadow-md transition-all group-hover:brightness-75"
+              />
+              <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                <span className="material-symbols-outlined">photo_camera</span>
+                <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={handleAvatarChange} />
+              </label>
+            </div>
+            <div className="flex flex-col justify-center">
+              <h3 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Ảnh đại diện</h3>
+              <p className="text-xs mt-1 max-w-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                Định dạng JPG, PNG hoặc WEBP. Dung lượng tối đa 5MB. Nhấn vào ảnh để thay đổi.
+              </p>
+            </div>
+          </div>
+
+          {message && (
+            <div
+              className="mb-6 p-4 rounded-xl text-sm font-semibold"
+              style={{
+                backgroundColor: message.type === "success" ? "var(--color-success-soft)" : "var(--color-danger-soft)",
+                color: message.type === "success" ? "var(--color-success)" : "var(--color-danger)",
+              }}
+            >
+              {message.text}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-[#595b61] ml-2">Họ và tên</label>
-              <input className="w-full bg-[#eff0f7] border-none rounded-2xl py-4 px-5 focus:ring-2 focus:ring-[#3647dc]/20 focus:bg-white transition-all text-[#2c2f33] font-medium" type="text" defaultValue="Nguyễn Thành Nam"/>
+              <label className="text-sm font-bold ml-2" style={{ color: "var(--color-text-secondary)" }}>Họ và tên</label>
+              <input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full border-none rounded-2xl py-4 px-5 focus:ring-2 transition-all font-medium"
+                style={{
+                  backgroundColor: "var(--color-bg-input)",
+                  color: "var(--color-text-primary)",
+                }}
+                type="text"
+                placeholder="Nhập họ và tên..."
+              />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-[#595b61] ml-2">Email</label>
-              <input className="w-full bg-[#eff0f7] border-none rounded-2xl py-4 px-5 focus:ring-2 focus:ring-[#3647dc]/20 focus:bg-white transition-all text-[#2c2f33] font-medium" type="email" defaultValue="nam.nt@misslost.vn"/>
+              <label className="text-sm font-bold ml-2" style={{ color: "var(--color-text-secondary)" }}>Email</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border-none rounded-2xl py-4 px-5 focus:ring-2 transition-all font-medium"
+                style={{
+                  backgroundColor: "var(--color-bg-input)",
+                  color: "var(--color-text-primary)",
+                }}
+                type="email"
+                placeholder="email@example.com"
+              />
             </div>
             <div className="flex flex-col gap-2 md:col-span-2">
-              <label className="text-sm font-bold text-[#595b61] ml-2">Tiểu sử</label>
-              <textarea className="w-full bg-[#eff0f7] border-none rounded-2xl py-4 px-5 focus:ring-2 focus:ring-[#3647dc]/20 focus:bg-white transition-all text-[#2c2f33] font-medium" rows={3} defaultValue="Lạc quan và hay quên. Hy vọng cộng đồng sẽ giúp mình tìm lại những món đồ thất lạc."/>
+              <label className="text-sm font-bold ml-2" style={{ color: "var(--color-text-secondary)" }}>Tiểu sử</label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="w-full border-none rounded-2xl py-4 px-5 focus:ring-2 transition-all font-medium"
+                style={{
+                  backgroundColor: "var(--color-bg-input)",
+                  color: "var(--color-text-primary)",
+                }}
+                rows={3}
+                placeholder="Mô tả về bạn..."
+              />
             </div>
           </div>
           <div className="mt-8 flex justify-end">
-            <button className="px-8 py-3 bg-[#3647dc] text-white rounded-full font-bold hover:shadow-xl hover:shadow-[#3647dc]/30 transition-all active:scale-95">Lưu thay đổi</button>
-          </div>
-        </section>
-
-        {/* Language Card */}
-        <section className="lg:col-span-4 bg-white/75 backdrop-blur-xl p-8 rounded-lg shadow-sm border border-white/20">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#734a90]/10 flex items-center justify-center text-[#734a90]">
-              <span className="material-symbols-outlined text-3xl">language</span>
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight">Ngôn ngữ</h2>
-          </div>
-          <div className="flex flex-col gap-4">
-            <button className="flex items-center justify-between p-4 bg-[#3647dc]/10 border-2 border-[#3647dc]/20 rounded-2xl transition-all">
-              <span className="font-bold text-[#3647dc]">Tiếng Việt</span>
-              <span className="material-symbols-outlined text-[#3647dc]" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-            </button>
-            <button className="flex items-center justify-between p-4 bg-[#dadde5]/30 rounded-2xl hover:bg-[#dadde5]/50 transition-all">
-              <span className="font-medium text-[#2c2f33]">English</span>
-            </button>
-            <button className="flex items-center justify-between p-4 bg-[#dadde5]/30 rounded-2xl hover:bg-[#dadde5]/50 transition-all">
-              <span className="font-medium text-[#2c2f33]">日本語</span>
+            <button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="px-8 py-3 text-white rounded-full font-bold transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: "var(--color-accent)",
+                boxShadow: "var(--shadow-button)",
+              }}
+            >
+              {isLoading ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
           </div>
         </section>
 
-        {/* Security Card */}
-        <section className="lg:col-span-6 bg-white/75 backdrop-blur-xl p-8 rounded-lg shadow-sm border border-white/20">
+        {/* Security / Password Card */}
+        <section
+          className="lg:col-span-4 backdrop-blur-xl p-8 rounded-lg transition-colors duration-300"
+          style={{
+            backgroundColor: "var(--color-bg-card)",
+            boxShadow: "var(--shadow-card)",
+            border: "1px solid var(--color-border-primary)",
+          }}
+        >
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#b41340]/10 flex items-center justify-center text-[#b41340]">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: "var(--color-danger-soft)", color: "var(--color-danger)" }}
+            >
               <span className="material-symbols-outlined text-3xl">security</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">Bảo mật tài khoản</h2>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
+              Bảo mật
+            </h2>
           </div>
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between p-2">
-              <div>
-                <p className="font-bold text-[#2c2f33]">Xác thực 2 yếu tố (2FA)</p>
-                <p className="text-sm text-[#595b61]">Tăng cường bảo mật đăng nhập</p>
-              </div>
-              {/* Toggle ON */}
-              <div className="w-12 h-6 bg-[#8c98ff] rounded-full relative cursor-pointer">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow"></div>
-              </div>
-            </div>
-            <hr className="border-slate-200/50"/>
-            <div className="flex items-center justify-between p-2">
-              <div>
-                <p className="font-bold text-[#2c2f33]">Mật khẩu</p>
-                <p className="text-sm text-[#595b61]">Cập nhật mật khẩu định kỳ</p>
-              </div>
-              <button className="text-[#3647dc] font-bold text-sm">Đổi mật khẩu</button>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold ml-2" style={{ color: "var(--color-text-secondary)" }}>Đổi Mật khẩu mới</label>
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border-none rounded-2xl py-4 px-5 focus:ring-2 transition-all font-medium"
+                style={{
+                  backgroundColor: "var(--color-bg-input)",
+                  color: "var(--color-text-primary)",
+                }}
+                type="password"
+                placeholder="Bỏ trống nếu không đổi"
+              />
             </div>
           </div>
         </section>
 
-        {/* Notifications Card */}
-        <section className="lg:col-span-6 bg-white/75 backdrop-blur-xl p-8 rounded-lg shadow-sm border border-white/20">
+        {/* ═══ Theme Mode Selector ═══ */}
+        <section
+          className="col-span-1 lg:col-span-6 backdrop-blur-xl p-8 rounded-lg transition-colors duration-300"
+          style={{
+            backgroundColor: "var(--color-bg-card)",
+            boxShadow: "var(--shadow-card)",
+            border: "1px solid var(--color-border-primary)",
+          }}
+        >
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#4050bc]/10 flex items-center justify-center text-[#4050bc]">
-              <span className="material-symbols-outlined text-3xl">notifications_active</span>
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              style={{
+                backgroundColor: theme === "dark" ? "rgba(108,123,255,0.12)" : "rgba(91,108,255,0.1)",
+                color: "var(--color-brand)",
+              }}
+            >
+              <span className="material-symbols-outlined text-3xl">
+                {theme === "dark" ? "dark_mode" : "light_mode"}
+              </span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">Thông báo</h2>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
+                Giao diện
+              </h2>
+              <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                Chọn chế độ hiển thị yêu thích
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between p-2">
-              <div>
-                <p className="font-bold text-[#2c2f33]">Thông báo qua Email</p>
-                <p className="text-sm text-[#595b61]">Nhận tin nhắn và cập nhật mới</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Light Mode Option */}
+            <button
+              onClick={() => setTheme("light")}
+              className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: theme === "light" ? "var(--color-brand-bg)" : "var(--color-bg-input)",
+                border: theme === "light"
+                  ? "2px solid var(--color-brand)"
+                  : "2px solid transparent",
+              }}
+            >
+              {/* Preview mockup */}
+              <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border relative" style={{ borderColor: "var(--color-border-subtle)" }}>
+                <div className="absolute inset-0 bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]">
+                  {/* Mini header */}
+                  <div className="h-3 bg-[var(--color-bg-card-solid)] border-b border-[var(--color-border-subtle)] flex items-center px-1.5">
+                    <div className="w-4 h-1 bg-[#5c6cff] rounded-full" />
+                  </div>
+                  {/* Mini sidebar + content */}
+                  <div className="flex h-full pt-0.5">
+                    <div className="w-1/4 px-1 pt-1 space-y-0.5">
+                      <div className="h-1 bg-[var(--color-bg-input-hover)] rounded-full" />
+                      <div className="h-1 bg-[#5c6cff]/20 rounded-full" />
+                      <div className="h-1 bg-[var(--color-bg-input-hover)] rounded-full" />
+                    </div>
+                    <div className="flex-1 p-1 space-y-1">
+                      <div className="h-2 bg-[var(--color-bg-card-solid)] rounded border border-[var(--color-border-subtle)]" />
+                      <div className="h-2 bg-[var(--color-bg-card-solid)] rounded border border-[var(--color-border-subtle)]" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              {/* Toggle OFF */}
-              <div className="w-12 h-6 bg-[#dadde5] rounded-full relative cursor-pointer">
-                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow"></div>
+
+              <div className="flex items-center gap-2">
+                <span
+                  className="material-symbols-outlined text-xl"
+                  style={{
+                    color: theme === "light" ? "var(--color-brand)" : "var(--color-text-muted)",
+                    fontVariationSettings: theme === "light" ? "'FILL' 1" : undefined,
+                  }}
+                >
+                  light_mode
+                </span>
+                <span
+                  className="font-bold text-sm"
+                  style={{ color: theme === "light" ? "var(--color-brand)" : "var(--color-text-secondary)" }}
+                >
+                  Sáng
+                </span>
               </div>
-            </div>
-            <hr className="border-slate-200/50"/>
-            <div className="flex items-center justify-between p-2">
-              <div>
-                <p className="font-bold text-[#2c2f33]">Tin nhắn trực tiếp</p>
-                <p className="text-sm text-[#595b61]">Thông báo khi có người chat</p>
+
+              {/* Check badge */}
+              {theme === "light" && (
+                <div
+                  className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: "var(--color-brand)", color: "#fff" }}
+                >
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                </div>
+              )}
+            </button>
+
+            {/* Dark Mode Option */}
+            <button
+              onClick={() => setTheme("dark")}
+              className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: theme === "dark" ? "var(--color-brand-bg)" : "var(--color-bg-input)",
+                border: theme === "dark"
+                  ? "2px solid var(--color-brand)"
+                  : "2px solid transparent",
+              }}
+            >
+              {/* Preview mockup */}
+              <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border relative" style={{ borderColor: "var(--color-border-subtle)" }}>
+                <div className="absolute inset-0 bg-[#0f1117]">
+                  {/* Mini header */}
+                  <div className="h-3 bg-[#1e2030] border-b border-white/5 flex items-center px-1.5">
+                    <div className="w-4 h-1 bg-[#8490ff] rounded-full" />
+                  </div>
+                  {/* Mini sidebar + content */}
+                  <div className="flex h-full pt-0.5">
+                    <div className="w-1/4 px-1 pt-1 space-y-0.5">
+                      <div className="h-1 bg-[var(--color-bg-card-solid)]/10 rounded-full" />
+                      <div className="h-1 bg-[#8490ff]/20 rounded-full" />
+                      <div className="h-1 bg-[var(--color-bg-card-solid)]/10 rounded-full" />
+                    </div>
+                    <div className="flex-1 p-1 space-y-1">
+                      <div className="h-2 bg-[#1a1c28] rounded border border-white/5" />
+                      <div className="h-2 bg-[#1a1c28] rounded border border-white/5" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              {/* Toggle ON */}
-              <div className="w-12 h-6 bg-[#8c98ff] rounded-full relative cursor-pointer">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow"></div>
+
+              <div className="flex items-center gap-2">
+                <span
+                  className="material-symbols-outlined text-xl"
+                  style={{
+                    color: theme === "dark" ? "var(--color-brand)" : "var(--color-text-muted)",
+                    fontVariationSettings: theme === "dark" ? "'FILL' 1" : undefined,
+                  }}
+                >
+                  dark_mode
+                </span>
+                <span
+                  className="font-bold text-sm"
+                  style={{ color: theme === "dark" ? "var(--color-brand)" : "var(--color-text-secondary)" }}
+                >
+                  Tối
+                </span>
               </div>
-            </div>
+
+              {/* Check badge */}
+              {theme === "dark" && (
+                <div
+                  className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: "var(--color-brand)", color: "#fff" }}
+                >
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                </div>
+              )}
+            </button>
           </div>
         </section>
       </div>

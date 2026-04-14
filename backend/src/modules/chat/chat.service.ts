@@ -13,17 +13,26 @@ export class ChatService {
     const { data, error } = await this.supabase
       .from('conversations')
       .select(`
-        id, last_message_at, created_at,
+        id, last_message_at, created_at, user_a_id, user_b_id, lost_post_id, found_post_id,
         lost_posts(id, title),
         found_posts(id, title),
         user_a:users!conversations_user_a_id_fkey(id, full_name, avatar_url),
-        user_b:users!conversations_user_b_id_fkey(id, full_name, avatar_url)
+        user_b:users!conversations_user_b_id_fkey(id, full_name, avatar_url),
+        messages (id, content, image_url, sender_id, created_at)
       `)
       .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
+      .order('created_at', { foreignTable: 'messages', ascending: false })
+      .limit(1, { foreignTable: 'messages' })
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
     if (error) throw error;
-    return data ?? [];
+    
+    // Transform to have last_message
+    return (data ?? []).map((conv: any) => ({
+      ...conv,
+      last_message: conv.messages && conv.messages.length > 0 ? conv.messages[0] : null,
+      messages: undefined,
+    }));
   }
 
   async createOrGetConversation(dto: CreateConversationDto, userId: string) {
@@ -66,8 +75,8 @@ export class ChatService {
     const { data, error, count } = await this.supabase
       .from('messages')
       .select(`
-        id, content, image_url, message_type, is_read, created_at,
-        users!messages_sender_id_fkey(id, full_name, avatar_url)
+        id, sender_id, content, image_url, message_type, is_read, created_at,
+        sender:users!messages_sender_id_fkey(id, full_name, avatar_url)
       `, { count: 'exact' })
       .eq('conversation_id', conversationId)
       .is('deleted_at', null)
@@ -107,8 +116,8 @@ export class ChatService {
         message_type: dto.message_type ?? 'text',
       })
       .select(`
-        id, content, image_url, message_type, is_read, created_at,
-        users!messages_sender_id_fkey(id, full_name, avatar_url)
+        id, sender_id, content, image_url, message_type, is_read, created_at,
+        sender:users!messages_sender_id_fkey(id, full_name, avatar_url)
       `)
       .single();
 

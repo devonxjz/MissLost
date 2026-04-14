@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AiMatchesService } from './ai-matches.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -45,5 +45,27 @@ export class AiMatchesController {
   @ApiOperation({ summary: 'Dashboard thống kê (admin)' })
   getDashboard() {
     return this.aiMatchesService.getDashboardStats();
+  }
+
+  @Get('admin/dashboard/enhanced')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Dashboard thống kê nâng cao — breakdown, activity, categories (admin)' })
+  getEnhancedDashboard() {
+    return this.aiMatchesService.getEnhancedDashboardStats();
+  }
+
+  @Get('admin/posts')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Danh sách tất cả bài đăng (admin) — lọc theo type, status, search' })
+  listAllPosts(
+    @Query('type') type: 'all' | 'lost' | 'found' = 'all',
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.aiMatchesService.listAllPosts({ type, status, search, page: +page, limit: +limit });
   }
 }

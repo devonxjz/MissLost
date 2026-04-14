@@ -22,7 +22,7 @@ export class LostPostsService {
       .insert({
         ...dto,
         user_id: userId,
-        status: 'pending',
+        status: 'approved',
       })
       .select('*')
       .single();
@@ -34,7 +34,7 @@ export class LostPostsService {
       post_type: 'lost',
       post_id: data.id,
       old_status: null,
-      new_status: 'pending',
+      new_status: 'approved',
       changed_by: userId,
       note: 'Bài đăng mới tạo',
     });
@@ -52,7 +52,7 @@ export class LostPostsService {
       .select(`
         id, title, description, location_lost, time_lost, image_urls, status,
         is_urgent, reward_note, view_count, created_at,
-        users!lost_posts_user_id_fkey(full_name, avatar_url),
+        users!lost_posts_user_id_fkey(id, full_name, avatar_url),
         item_categories(name, icon_name)
       `, { count: 'exact' })
       .eq('status', status)
@@ -75,7 +75,7 @@ export class LostPostsService {
   async findMyPosts(userId: string) {
     const { data, error } = await this.supabase
       .from('lost_posts')
-      .select('id, title, status, created_at, is_urgent, category_id, item_categories(name, icon_name)')
+      .select('id, title, description, image_urls, view_count, status, created_at, is_urgent, category_id, item_categories(name, icon_name)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 

@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/app/lib/api";
 
 const navItems = [
   { href: "/feeds", icon: "home", label: "Trang chủ" },
@@ -9,7 +10,7 @@ const navItems = [
   { href: "/found", icon: "location_on", label: "Nhặt được" },
   { href: "/storage", icon: "inventory_2", label: "Kho lưu trữ" },
   { href: "/messages", icon: "chat_bubble", label: "Tin nhắn" },
-  { href: "/trust-score", icon: "verified_user", label: "Điểm uy tín" },
+  { href: "/trust-score", icon: "verified_user", label: "Điểm rèn luyện" },
   { href: "/my-posts", icon: "post_add", label: "Bài đăng của tôi" },
   { href: "/settings", icon: "settings", label: "Cài đặt" },
 ];
@@ -20,30 +21,36 @@ export default function SideNavBar() {
 
   // Manual prefetch main routes
   useEffect(() => {
-    // Prefetching important routes to load them in the background
-    // for native app-like instantaneous transitions.
     const priorityRoutes = ["/feeds", "/lost", "/found", "/messages", "/settings"];
     priorityRoutes.forEach(route => router.prefetch(route));
   }, [router]);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Poll unread count every 15s
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return; // Only fetch if logged in
+        const res = await apiFetch<any>('/chat/unread-count');
+        if (res && typeof res.data === 'number') {
+          setUnreadCount(res.data);
+        }
+      } catch (e) {
+        // Ignore unread fetch errors
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
       {/* Desktop SideNavBar */}
       <aside className="hidden lg:flex w-72 flex-col gap-2 pt-4 shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto scrollbar-hide pb-4">
-        <div className="px-4 mb-6">
-          <div className="flex items-center gap-3">
-            <img
-              alt="User profile"
-              className="w-10 h-10 rounded-full border-2 border-[#3647dc]/20"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuzoumdYUvT-aTdjXGews9g11qRL6mhoT6azDHBlYJ7rS0CLFSyAXNhVA7R23H4NtVqb_EASEOXnPX9OntCm-CIq8nf26-0O88XlA-b5bT0v42XKwW7rfaNnkENXfGvSNiQDJkX6mSIpTFZV1kum2E8frP6k2MO62SaJO_a2arOa5X0cHnGn-FMTJIamF7fz0a-y3AzxgA1KIB6CwqWxiG1kuSwQWzq9tr4T6P615SjKbJFcMjwK6Y6XgcUWBtyeZ_jUbyxhobakU"
-            />
-            <div>
-              <p className="font-bold text-sm text-[#5B6CFF]">MissLost Profile</p>
-              <p className="text-xs text-slate-500">Verified Member</p>
-            </div>
-          </div>
-        </div>
-
         <nav className="flex flex-col gap-1">
           {navItems.map(({ href, icon, label }) => {
             const isActive = pathname === href;
@@ -52,48 +59,89 @@ export default function SideNavBar() {
                 key={href}
                 href={href}
                 prefetch={true}
-                className={`px-4 py-3 flex items-center gap-3 font-semibold text-sm transition-all rounded-full
-                  ${isActive
-                    ? "bg-[#5B6CFF]/15 text-[#5B6CFF]"
-                    : "text-slate-600 hover:translate-x-1 hover:text-[#5B6CFF]"
-                  }`}
+                className="px-4 py-3 flex items-center justify-between font-semibold text-sm transition-all rounded-full"
+                style={{
+                  backgroundColor: isActive ? "var(--color-brand-bg)" : "transparent",
+                  color: isActive ? "var(--color-brand)" : "var(--color-text-secondary)",
+                }}
               >
-                <span
-                  className="material-symbols-outlined"
-                  style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                >
-                  {icon}
-                </span>
-                {label}
+                <div className="flex items-center gap-3">
+                  <span
+                    className="material-symbols-outlined"
+                    style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                  >
+                    {icon}
+                  </span>
+                  {label}
+                </div>
+                {/* Unread Message Badge */}
+                {href === "/messages" && unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-8 p-4 bg-[#3647dc]/5 rounded-2xl border border-[#3647dc]/10 mx-2">
-          <p className="text-[10px] font-bold text-[#3647dc] mb-2 uppercase tracking-widest">Mẹo cộng đồng</p>
-          <p className="text-xs text-[#595b61] leading-relaxed">Hãy luôn kiểm tra Trust Score của người liên hệ nhé!</p>
+        <div
+          className="mt-8 p-4 rounded-2xl mx-2"
+          style={{
+            backgroundColor: "var(--color-accent-soft)",
+            border: "1px solid var(--color-accent-border)",
+          }}
+        >
+          <p
+            className="text-[10px] font-bold mb-2 uppercase tracking-widest"
+            style={{ color: "var(--color-accent)" }}
+          >
+            Mẹo cộng đồng
+          </p>
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Hãy luôn kiểm tra Trust Score của người liên hệ nhé!
+          </p>
         </div>
       </aside>
 
       {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-100 flex justify-around items-center py-3 z-50">
-        <Link prefetch={true} className="text-[#3647dc] flex flex-col items-center" href="/feeds">
+      <nav
+        className="md:hidden fixed bottom-0 left-0 w-full backdrop-blur-lg border-t flex justify-around items-center py-3 z-50 transition-colors duration-300"
+        style={{
+          backgroundColor: "var(--color-bg-nav-mobile)",
+          borderColor: "var(--color-border-subtle)",
+        }}
+      >
+        <Link prefetch={true} className="flex flex-col items-center" href="/feeds" style={{ color: "var(--color-brand)" }}>
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
           <span className="text-[10px] font-bold">Trang chủ</span>
         </Link>
-        <Link prefetch={true} className="text-slate-400 flex flex-col items-center" href="/lost">
+        <Link prefetch={true} className="flex flex-col items-center" href="/lost" style={{ color: "var(--color-text-muted)" }}>
           <span className="material-symbols-outlined">search_off</span>
           <span className="text-[10px]">Mất đồ</span>
         </Link>
-        <div className="relative -top-6 bg-[#3647dc] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-[#3647dc]/30 border-4 border-[#f5f6fc] cursor-pointer">
+        <div
+          className="relative -top-6 w-14 h-14 rounded-full flex items-center justify-center shadow-xl cursor-pointer"
+          style={{
+            backgroundColor: "var(--color-accent)",
+            color: "var(--color-text-on-accent)",
+            borderColor: "var(--color-bg-primary)",
+            borderWidth: "4px",
+          }}
+        >
           <span className="material-symbols-outlined text-3xl">add</span>
         </div>
-        <Link prefetch={true} className="text-slate-400 flex flex-col items-center" href="/messages">
+        <Link prefetch={true} className="flex flex-col items-center relative" href="/messages" style={{ color: "var(--color-text-muted)" }}>
           <span className="material-symbols-outlined">chat</span>
           <span className="text-[10px]">Chat</span>
+          {unreadCount > 0 && (
+            <span className="absolute top-0 right-1 bg-red-500 w-2.5 h-2.5 rounded-full border border-white"></span>
+          )}
         </Link>
-        <Link prefetch={true} className="text-slate-400 flex flex-col items-center" href="/settings">
+        <Link prefetch={true} className="flex flex-col items-center" href="/settings" style={{ color: "var(--color-text-muted)" }}>
           <span className="material-symbols-outlined">person</span>
           <span className="text-[10px]">Cá nhân</span>
         </Link>
