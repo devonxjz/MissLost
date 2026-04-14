@@ -30,7 +30,7 @@ export default function SettingsPage() {
           setFullName(user.full_name || "");
           setAvatarUrl(user.avatar_url || "");
         }
-        
+
         // Fetch fresh profile from backend
         const response = await apiFetch<any>('/users/me');
         // Backend ResponseInterceptor wraps in { data: ... }
@@ -120,7 +120,7 @@ export default function SettingsPage() {
         localStorage.setItem("user", JSON.stringify(merged));
         window.dispatchEvent(new Event("userUpdated"));
       }
-      
+
       setPassword(""); // clear password field after saving
     } catch (err: any) {
       console.error(err);
@@ -173,21 +173,21 @@ export default function SettingsPage() {
           {/* Avatar Upload Section */}
           <div className="mb-6 flex flex-col items-center sm:flex-row sm:items-start gap-6">
             <div className="relative group">
-               <img
-                 src={avatarPreview || avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || "User")}&background=f1f3f9&color=5f6368`}
-                 alt="Avatar"
-                 className="w-24 h-24 rounded-full object-cover border-4 border-[var(--color-bg-card)] shadow-md transition-all group-hover:brightness-75"
-               />
-               <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                 <span className="material-symbols-outlined">photo_camera</span>
-                 <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={handleAvatarChange} />
-               </label>
+              <img
+                src={avatarPreview || avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || "User")}&background=f1f3f9&color=5f6368`}
+                alt="Avatar"
+                className="w-24 h-24 rounded-full object-cover border-4 border-[var(--color-bg-card)] shadow-md transition-all group-hover:brightness-75"
+              />
+              <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                <span className="material-symbols-outlined">photo_camera</span>
+                <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg, image/webp" onChange={handleAvatarChange} />
+              </label>
             </div>
             <div className="flex flex-col justify-center">
-               <h3 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Ảnh đại diện</h3>
-               <p className="text-xs mt-1 max-w-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-                  Định dạng JPG, PNG hoặc WEBP. Dung lượng tối đa 5MB. Nhấn vào ảnh để thay đổi.
-               </p>
+              <h3 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Ảnh đại diện</h3>
+              <p className="text-xs mt-1 max-w-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                Định dạng JPG, PNG hoặc WEBP. Dung lượng tối đa 5MB. Nhấn vào ảnh để thay đổi.
+              </p>
             </div>
           </div>
 
@@ -455,46 +455,6 @@ export default function SettingsPage() {
                 </div>
               )}
             </button>
-          </div>
-        </section>
-
-        {/* Preferences / Language Card */}
-        <section
-          className="col-span-1 lg:col-span-6 backdrop-blur-xl p-8 rounded-lg transition-colors duration-300"
-          style={{
-            backgroundColor: "var(--color-bg-card)",
-            boxShadow: "var(--shadow-card)",
-            border: "1px solid var(--color-border-primary)",
-          }}
-        >
-          <div className="flex items-center gap-4 mb-8">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: "var(--color-success-soft)", color: "var(--color-success)" }}
-            >
-              <span className="material-symbols-outlined text-3xl">language</span>
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
-              Tùy chọn hiển thị
-            </h2>
-          </div>
-          <div className="flex flex-col gap-4 max-w-sm">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold ml-2" style={{ color: "var(--color-text-secondary)" }}>Ngôn ngữ mặc định</label>
-              <select 
-                value={language} 
-                onChange={(e) => setLanguage(e.target.value)} 
-                className="w-full border-none rounded-2xl py-4 px-5 focus:ring-2 transition-all font-medium appearance-none cursor-pointer"
-                style={{
-                  backgroundColor: "var(--color-bg-input)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                <option value="vi">🇻🇳 Tiếng Việt</option>
-                <option value="en">🇺🇸 Tiếng Anh (English)</option>
-                <option value="zh">🇨🇳 Tiếng Trung (中文)</option>
-              </select>
-            </div>
           </div>
         </section>
       </div>
