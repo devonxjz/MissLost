@@ -69,8 +69,8 @@ export default function TrustScorePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<TrainingScoreData>("/users/me/training-score")
-      .then(setData)
+    apiFetch<{ data: TrainingScoreData }>("/users/me/training-score")
+      .then((res) => setData(res.data))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
