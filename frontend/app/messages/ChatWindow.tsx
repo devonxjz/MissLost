@@ -32,7 +32,8 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
   const loadTrigger = useCallback(async () => {
     if (!conversation?.id) return;
     try {
-      const triggers = await apiFetch<Trigger[]>(`/triggers/conversation/${conversation.id}`);
+      const response = await apiFetch<any>(`/triggers/conversation/${conversation.id}`);
+      const triggers = Array.isArray(response) ? response : response?.data || [];
       setTrigger(triggers[0] || null);
     } catch (err) {
       // Silently ignore — user may not have trigger access for some conversations
@@ -61,18 +62,28 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
       setTriggerActionLoading(true);
       const targetUserId = conversation.user_a_id === currentUserId ? conversation.user_b_id : conversation.user_a_id;
       
+      const postId = conversation.found_post_id || conversation.lost_post_id;
+      const postType = conversation.found_post_id ? 'found' : 'lost';
+
       await apiFetch('/triggers', {
         method: 'POST',
         body: JSON.stringify({
-          post_id: conversation.lost_post_id || conversation.found_post_id,
-          post_type: conversation.found_post_id ? 'found' : 'lost',
+          post_id: postId,
+          post_type: postType,
           target_user_id: targetUserId,
           conversation_id: conversation.id
         })
       });
-      // realtime will automatically reload trigger
+      
+      // Refresh state immediately
+      await loadTrigger();
     } catch (e: any) {
-      alert("Lỗi: " + e.message);
+      if (e.message.includes("Đã có yêu cầu xác nhận đang chờ")) {
+        alert("Thông báo: Bạn đã gửi yêu cầu rồi. Vui lòng chờ đối phương xác nhận.");
+        loadTrigger();
+      } else {
+        alert("Lỗi: " + e.message);
+      }
     } finally {
       setTriggerActionLoading(false);
     }
@@ -86,7 +97,24 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
         method: 'POST'
       });
       alert('Đã xác nhận trao trả thành công! Điểm rèn luyện đã được cộng.');
-      // realtime will automatically reload trigger
+      await loadTrigger();
+    } catch (e: any) {
+      alert("Lỗi: " + e.message);
+    } finally {
+      setTriggerActionLoading(false);
+    }
+  };
+
+  const handleCancelTrigger = async () => {
+    if (!trigger) return;
+    if (!confirm("Bạn có chắc chắn muốn hủy yêu cầu xác nhận này không?")) return;
+    
+    try {
+      setTriggerActionLoading(true);
+      await apiFetch(`/triggers/${trigger.id}/cancel`, {
+        method: 'PATCH'
+      });
+      await loadTrigger();
     } catch (e: any) {
       alert("Lỗi: " + e.message);
     } finally {
@@ -166,12 +194,27 @@ export default function ChatWindow({ conversation, messages, currentUserId }: Ch
        } else {
          return (
            <div className="flex items-center justify-between w-full my-2 px-6 py-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
-             <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                <span className="text-sm font-bold text-amber-700">
-                  Đang chờ {partnerName} xác nhận...
-                </span>
+             <div className="flex items-center gap-3">
+                <div className="relative">
+                  <span className="material-symbols-outlined text-amber-600 text-2xl">pending_actions</span>
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                </div>
+                <div>
+                   <span className="text-sm font-bold text-amber-800 block">
+                     Đang chờ {partnerName} xác nhận...
+                   </span>
+                   <span className="text-[10px] text-amber-700/70">
+                     Bạn có thể nhắn tin nhắc họ kiểm tra nhé.
+                   </span>
+                </div>
              </div>
+             <button 
+               onClick={handleCancelTrigger}
+               disabled={triggerActionLoading}
+               className="text-[10px] font-bold uppercase tracking-tighter text-amber-700 hover:text-red-600 transition-colors underline underline-offset-2"
+             >
+               {triggerActionLoading ? "..." : "Hủy yêu cầu"}
+             </button>
            </div>
          );
        }

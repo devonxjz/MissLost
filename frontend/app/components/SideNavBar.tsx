@@ -10,7 +10,7 @@ const navItems = [
   { href: "/found", icon: "location_on", label: "Nhặt được" },
   { href: "/storage", icon: "inventory_2", label: "Kho lưu trữ" },
   { href: "/messages", icon: "chat_bubble", label: "Tin nhắn" },
-  { href: "/trust-score", icon: "verified_user", label: "Điểm uy tín" },
+  { href: "/trust-score", icon: "verified_user", label: "Điểm rèn luyện" },
   { href: "/my-posts", icon: "post_add", label: "Bài đăng của tôi" },
   { href: "/settings", icon: "settings", label: "Cài đặt" },
 ];
@@ -41,7 +41,7 @@ export default function SideNavBar() {
         // Ignore unread fetch errors
       }
     };
-    
+
     fetchUnread();
     const interval = setInterval(fetchUnread, 15000);
     return () => clearInterval(interval);

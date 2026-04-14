@@ -61,10 +61,45 @@ export class UsersService {
   async getTrainingHistory(userId: string) {
     const { data } = await this.supabase
       .from('training_point_logs')
-      .select('*, handovers(id, completed_at)')
+      .select('id, user_id, points_delta, reason, balance_after, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     return data ?? [];
+  }
+
+  async getTrainingScore(userId: string) {
+    // Fetch user profile + training logs in parallel
+    const [userResult, logsResult, triggersResult] = await Promise.all([
+      this.supabase
+        .from('users')
+        .select('id, full_name, avatar_url, training_points, created_at')
+        .eq('id', userId)
+        .single(),
+      this.supabase
+        .from('training_point_logs')
+        .select('id, points_delta, reason, balance_after, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      this.supabase
+        .from('triggers')
+        .select('id', { count: 'exact' })
+        .or(`finder_user_id.eq.${userId},target_user_id.eq.${userId}`)
+        .eq('status', 'confirmed'),
+    ]);
+
+    if (userResult.error || !userResult.data) {
+      throw new NotFoundException('Người dùng', userId);
+    }
+
+    return {
+      user: userResult.data,
+      logs: logsResult.data ?? [],
+      stats: {
+        total_points: userResult.data.training_points ?? 0,
+        total_handovers: triggersResult.count ?? 0,
+      },
+    };
   }
 
   // Admin: list all users

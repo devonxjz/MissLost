@@ -53,6 +53,12 @@ export class UsersController {
     return this.usersService.getTrainingHistory(user.id);
   }
 
+  @Get('users/me/training-score')
+  @ApiOperation({ summary: 'Tổng quan điểm rèn luyện (cho trang Điểm rèn luyện)' })
+  getTrainingScore(@CurrentUser() user: any) {
+    return this.usersService.getTrainingScore(user.id);
+  }
+
   @Get('users/:id')
   @ApiOperation({ summary: 'Xem thông tin user (admin)' })
   @UseGuards(RolesGuard)

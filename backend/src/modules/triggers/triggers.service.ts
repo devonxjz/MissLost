@@ -34,7 +34,7 @@ export class TriggersService {
       p_created_by: userId,
       p_target_user: dto.target_user_id,
       p_conversation: dto.conversation_id ?? null,
-      p_points: 10,
+      p_points: 5,
     });
 
     if (error) throw new ValidationException(error.message);
