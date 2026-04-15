@@ -90,4 +90,39 @@ export class UsersController {
   activate(@Param('id') id: string) {
     return this.usersService.updateStatus(id, 'active');
   }
+
+  @Get('admin/training-points')
+  @ApiOperation({ summary: 'Danh sách điểm rèn luyện tất cả users (admin)' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  getTrainingPointsAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('search') search?: string,
+    @Query('sort') sort: 'asc' | 'desc' = 'desc',
+  ) {
+    return this.usersService.getTrainingPointsAdmin(+page, +limit, search, sort);
+  }
+
+  @Patch('admin/users/:id/training-points')
+  @ApiOperation({ summary: 'Điều chỉnh điểm rèn luyện (admin)' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  adjustTrainingPoints(
+    @Param('id') id: string,
+    @Body() body: { points: number; reason: string },
+  ) {
+    return this.usersService.adjustTrainingPoints(id, body.points, body.reason);
+  }
+
+  @Get('admin/training-points/logs')
+  @ApiOperation({ summary: 'Lịch sử điểm rèn luyện toàn hệ thống (admin)' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  getTrainingLogs(
+    @Query('page') page = 1,
+    @Query('limit') limit = 30,
+  ) {
+    return this.usersService.getTrainingLogsAdmin(+page, +limit);
+  }
 }

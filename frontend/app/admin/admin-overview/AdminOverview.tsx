@@ -62,14 +62,16 @@ export default function AdminOverview() {
     useEffect(() => {
         async function load() {
             try {
-                const [dashData, enhancedData, usersData] = await Promise.all([
-                    apiFetch<DashboardStats>("/admin/dashboard"),
-                    apiFetch<EnhancedStats>("/admin/dashboard/enhanced"),
-                    apiFetch<{ data: UserRow[] }>("/admin/users?page=1&limit=5"),
+                const [dashRaw, enhancedRaw, usersRaw] = await Promise.all([
+                    apiFetch<any>("/admin/dashboard"),
+                    apiFetch<any>("/admin/dashboard/enhanced"),
+                    apiFetch<any>("/admin/users?page=1&limit=5"),
                 ]);
-                setStats(dashData);
-                setEnhanced(enhancedData);
-                setUsers(usersData.data);
+                // Unwrap ResponseInterceptor wrapper { data: ... }
+                setStats(dashRaw?.data ?? dashRaw);
+                setEnhanced(enhancedRaw?.data ?? enhancedRaw);
+                const usersPayload = usersRaw?.data ?? usersRaw;
+                setUsers(Array.isArray(usersPayload) ? usersPayload : (usersPayload?.data ?? []));
             } catch (err) {
                 console.error("Failed to load admin overview:", err);
             } finally {

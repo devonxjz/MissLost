@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { getSupabaseClient } from '../../../config/supabase.config';
 import { UnauthorizedException } from '../../../common/exceptions/app.exception';
+import type { Request } from 'express';
 
 export interface JwtPayload {
   sub: string;  // user id
@@ -13,11 +14,28 @@ export interface JwtPayload {
   exp?: number;
 }
 
+/**
+ * Extract JWT from Authorization header first, then fall back to cookie.
+ * This supports both regular login (token in header) and Google OAuth (token in cookie).
+ */
+function extractJwtFromHeaderOrCookie(req: Request): string | null {
+  // 1. Try Authorization header first
+  const fromHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+  if (fromHeader) return fromHeader;
+
+  // 2. Fall back to cookie
+  if (req.cookies && req.cookies.access_token) {
+    return req.cookies.access_token;
+  }
+
+  return null;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: extractJwtFromHeaderOrCookie,
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET') || 'fallback-secret-change-in-production',
     });

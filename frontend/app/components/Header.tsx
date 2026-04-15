@@ -76,10 +76,24 @@ export default function Header() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("user");
-        window.location.href = "/auth/login";
+    const handleLogout = async () => {
+        try {
+            // Call backend logout to clear cookie
+            await fetch("http://localhost:3001/auth/logout", {
+                method: "POST",
+                credentials: 'include',
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            // Clear localStorage
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("user");
+            window.location.href = "/auth/login";
+        }
     };
 
     return (

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -106,6 +106,37 @@ body {
 
 ::selection {
   background-color: var(--color-selection);
+}
+
+/* ── Glass cards for admin pages ────────────────────── */
+.glass-card {
+  background-color: var(--color-bg-card-solid);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.glass-panel {
+  background-color: var(--color-bg-card-solid);
+}
+
+/* ── Admin filter buttons & inputs ────────────────────── */
+.admin-btn-inactive {
+  background-color: var(--color-bg-input);
+  color: var(--color-text-primary);
+}
+.admin-btn-inactive:hover {
+  background-color: var(--color-bg-input-hover);
+}
+.admin-input {
+  background-color: var(--color-bg-input);
+  color: var(--color-text-primary);
+  border: none;
+}
+.admin-input::placeholder {
+  color: var(--color-text-muted);
+}
+.admin-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

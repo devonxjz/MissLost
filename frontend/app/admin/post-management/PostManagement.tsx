@@ -77,8 +77,8 @@ export default function PostManagement() {
 
     const loadStats = useCallback(async () => {
         try {
-            const res = await apiFetch<any>("/admin/dashboard/enhanced");
-            setStats(res);
+            const raw = await apiFetch<any>("/admin/dashboard/enhanced");
+            setStats(raw?.data ?? raw);
         } catch (err) {
             console.error("Stats error:", err);
         }
@@ -91,49 +91,6 @@ export default function PostManagement() {
     useEffect(() => {
         loadStats();
     }, [loadStats]);
-
-    // Admin review actions
-    const handleApprove = async (postId: string, postType: string) => {
-        setActionLoading(postId);
-        try {
-            const endpoint =
-                postType === "lost"
-                    ? `/admin/lost-posts/${postId}/review`
-                    : `/admin/found-posts/${postId}/review`;
-            await apiFetch(endpoint, {
-                method: "POST",
-                body: JSON.stringify({ action: "approved" }),
-            });
-            await loadPosts(meta.page);
-            loadStats();
-        } catch (err) {
-            alert("Lỗi duyệt bài: " + (err as Error).message);
-        } finally {
-            setActionLoading(null);
-        }
-    };
-
-    const handleReject = async (postId: string, postType: string) => {
-        const reason = prompt("Lý do từ chối:");
-        if (!reason) return;
-        setActionLoading(postId);
-        try {
-            const endpoint =
-                postType === "lost"
-                    ? `/admin/lost-posts/${postId}/review`
-                    : `/admin/found-posts/${postId}/review`;
-            await apiFetch(endpoint, {
-                method: "POST",
-                body: JSON.stringify({ action: "rejected", reason }),
-            });
-            await loadPosts(meta.page);
-            loadStats();
-        } catch (err) {
-            alert("Lỗi từ chối bài: " + (err as Error).message);
-        } finally {
-            setActionLoading(null);
-        }
-    };
 
     const handleDelete = async (postId: string, postType: string) => {
         if (!confirm("Bạn có chắc muốn xóa bài đăng này?")) return;
@@ -169,9 +126,10 @@ export default function PostManagement() {
     // Summary stats from enhanced endpoint
     const postStats = stats?.posts;
     const totalPosts = postStats?.total ?? 0;
-    const pendingCount = (postStats?.lost?.by_status?.pending ?? 0) + (postStats?.found?.by_status?.pending ?? 0);
-    const approvedCount = (postStats?.lost?.by_status?.approved ?? 0) + (postStats?.found?.by_status?.approved ?? 0);
-    const rejectedCount = (postStats?.lost?.by_status?.rejected ?? 0) + (postStats?.found?.by_status?.rejected ?? 0);
+    const lostCount = postStats?.lost?.total ?? 0;
+    const foundCount = postStats?.found?.total ?? 0;
+    const matchedCount = (postStats?.lost?.by_status?.matched ?? 0) + (postStats?.found?.by_status?.matched ?? 0)
+        + (postStats?.lost?.by_status?.closed ?? 0) + (postStats?.found?.by_status?.closed ?? 0);
 
     const formatTimeAgo = (dateStr: string) => {
         const diff = Date.now() - new Date(dateStr).getTime();
@@ -224,48 +182,48 @@ export default function PostManagement() {
 
                     <div className="glass-card p-5 rounded-2xl border border-white/30 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
-                            <p className="text-[10px] uppercase tracking-widest font-black text-amber-600">
-                                Chờ duyệt
+                            <p className="text-[10px] uppercase tracking-widest font-black text-red-600">
+                                Mất đồ
                             </p>
-                            <span className="material-symbols-outlined text-amber-500 text-xl">pending</span>
+                            <span className="material-symbols-outlined text-red-500 text-xl">search_off</span>
                         </div>
-                        <h3 className="text-3xl font-black text-amber-600 tracking-tighter">
-                            {pendingCount}
+                        <h3 className="text-3xl font-black text-red-600 tracking-tighter">
+                            {lostCount}
                         </h3>
                         <p className="text-xs text-on-surface-variant mt-1">
-                            Cần admin xem xét
+                            Bài đăng tìm đồ
                         </p>
                     </div>
 
                     <div className="glass-card p-5 rounded-2xl border border-white/30 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
-                            <p className="text-[10px] uppercase tracking-widest font-black text-emerald-600">
-                                Đã duyệt
+                            <p className="text-[10px] uppercase tracking-widest font-black text-blue-600">
+                                Nhặt được
                             </p>
-                            <span className="material-symbols-outlined text-emerald-500 text-xl">check_circle</span>
+                            <span className="material-symbols-outlined text-blue-500 text-xl">location_on</span>
                         </div>
-                        <h3 className="text-3xl font-black text-emerald-600 tracking-tighter">
-                            {approvedCount}
+                        <h3 className="text-3xl font-black text-blue-600 tracking-tighter">
+                            {foundCount}
                         </h3>
                         <p className="text-xs text-on-surface-variant mt-1">
-                            Đang hiển thị công khai
+                            Bài đăng nhặt đồ
                         </p>
                     </div>
 
                     <div className="bg-gradient-to-br from-primary to-primary-container p-5 rounded-2xl shadow-xl shadow-primary/20 overflow-hidden relative">
                         <div className="relative z-10">
                             <p className="text-on-primary/70 text-[10px] font-bold uppercase tracking-widest mb-3">
-                                Từ chối
+                                Đã ghép / đóng
                             </p>
                             <h3 className="text-3xl font-black text-on-primary tracking-tighter">
-                                {rejectedCount}
+                                {matchedCount}
                             </h3>
                             <p className="text-on-primary/60 text-xs mt-1">
-                                Bài bị từ chối
+                                Đã tìm thấy chủ nhân
                             </p>
                         </div>
                         <span className="material-symbols-outlined absolute -right-3 -bottom-3 text-7xl text-on-primary/10">
-                            block
+                            handshake
                         </span>
                     </div>
                 </div>
@@ -284,8 +242,8 @@ export default function PostManagement() {
                                     onClick={() => setTypeFilter(t)}
                                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                                         typeFilter === t
-                                            ? "bg-primary text-white shadow-md shadow-primary/20"
-                                            : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
+                                            ? "bg-[var(--color-accent)] text-white shadow-md"
+                                            : "admin-btn-inactive"
                                     }`}
                                 >
                                     {t === "all" ? "Tất cả" : t === "lost" ? "Mất đồ" : "Nhặt được"}
@@ -302,7 +260,7 @@ export default function PostManagement() {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full bg-surface-container-high border-none rounded-xl text-xs font-bold text-on-surface-variant focus:ring-primary/20 py-2 px-3"
+                            className="w-full admin-input rounded-xl text-xs font-bold py-2 px-3"
                         >
                             <option value="">Tất cả trạng thái</option>
                             <option value="pending">Chờ duyệt</option>
@@ -324,32 +282,32 @@ export default function PostManagement() {
                                 placeholder="Nhập tiêu đề..."
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
-                                className="flex-1 bg-surface-container-high border-none rounded-xl text-xs font-medium text-on-surface placeholder:text-on-surface-variant/50 focus:ring-primary/20 py-2 px-3"
+                                className="flex-1 admin-input rounded-xl text-xs font-medium py-2 px-3"
                             />
                             <button
                                 type="submit"
-                                className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold"
+                                className="px-3 py-2 rounded-xl bg-[var(--color-accent)] text-white text-xs font-bold"
                             >
                                 <span className="material-symbols-outlined text-sm">search</span>
                             </button>
                         </form>
                     </div>
 
-                    {/* Live Count */}
+                    {/* Matched Quick Filter */}
                     <div className="bg-gradient-to-br from-primary to-primary-container p-5 rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-between group cursor-pointer overflow-hidden relative"
-                         onClick={() => { setStatusFilter("pending"); }}
+                         onClick={() => { setStatusFilter("matched"); }}
                     >
                         <div className="relative z-10">
                             <p className="text-on-primary/70 text-[10px] font-bold uppercase tracking-widest">
-                                Chờ duyệt
+                                Đã ghép
                             </p>
-                            <p className="text-on-primary text-2xl font-black">{pendingCount} bài</p>
+                            <p className="text-on-primary text-2xl font-black">{matchedCount} bài</p>
                         </div>
                         <span
                             className="material-symbols-outlined text-on-primary/20 text-6xl absolute -right-2 -bottom-2 group-hover:scale-110 transition-transform duration-500"
                             style={{ fontVariationSettings: "'FILL' 1" }}
                         >
-                            rate_review
+                            handshake
                         </span>
                     </div>
                 </div>
@@ -510,30 +468,6 @@ export default function PostManagement() {
                                                     {/* Actions */}
                                                     <td className="px-8 py-5 text-right">
                                                         <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            {p.status === "pending" && (
-                                                                <>
-                                                                    <button
-                                                                        onClick={() => handleApprove(p.id, p.post_type)}
-                                                                        disabled={actionLoading === p.id}
-                                                                        className="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold hover:bg-emerald-100 transition-all disabled:opacity-50 flex items-center gap-1"
-                                                                    >
-                                                                        <span className="material-symbols-outlined text-sm">
-                                                                            check
-                                                                        </span>
-                                                                        Duyệt
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleReject(p.id, p.post_type)}
-                                                                        disabled={actionLoading === p.id}
-                                                                        className="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-all disabled:opacity-50 flex items-center gap-1"
-                                                                    >
-                                                                        <span className="material-symbols-outlined text-sm">
-                                                                            close
-                                                                        </span>
-                                                                        Từ chối
-                                                                    </button>
-                                                                </>
-                                                            )}
                                                             <button
                                                                 onClick={() => handleDelete(p.id, p.post_type)}
                                                                 disabled={actionLoading === p.id}

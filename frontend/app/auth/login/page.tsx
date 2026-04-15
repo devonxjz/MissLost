@@ -20,6 +20,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log("Login response:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "Đăng nhập thất bại, vui lòng kiểm tra lại!");
@@ -29,9 +30,11 @@ export default function LoginPage() {
 
       if (payload.access_token) {
         localStorage.setItem("access_token", payload.access_token);
+        console.log("Saved access_token to localStorage");
       }
       if (payload.user) {
         localStorage.setItem("user", JSON.stringify(payload.user));
+        console.log("Saved user to localStorage:", payload.user);
       }
 
       // --- SỬA TẠI ĐÂY: Điều hướng dựa trên role ---
@@ -48,6 +51,11 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = "http://localhost:3001/auth/google";
   };
 
   return (
@@ -72,6 +80,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
+              onClick={handleGoogleLogin}
               className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl border border-slate-200 bg-[var(--color-bg-card-solid)] hover:bg-[#f8f9ff] text-sm font-semibold text-[var(--color-text-primary)] transition-all active:scale-[0.98] shadow-sm"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
