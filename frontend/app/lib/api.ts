@@ -6,6 +6,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 /**
  * Generic JSON fetch with automatic Bearer token injection.
+ * Supports both localStorage token and HTTP-only cookies.
  * Redirects to login on 401.
  */
 export async function apiFetch<T = unknown>(
@@ -15,11 +16,17 @@ export async function apiFetch<T = unknown>(
   const token =
     typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
+  // Don't send dummy Google OAuth session token as Bearer header
+  // The real JWT is in the HTTP-only cookie for Google OAuth users
+  const isRealToken = token && token !== "google-oauth-session";
+
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
+    // Include credentials to send HTTP-only cookies
+    credentials: 'include',
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(isRealToken ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
     },
   });
@@ -49,12 +56,17 @@ export async function uploadFile(
   const token =
     typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
+  // Don't send dummy Google OAuth session token as Bearer header
+  const isRealToken = token && token !== "google-oauth-session";
+
   const form = new FormData();
   form.append("file", file);
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    // Include credentials to send HTTP-only cookies
+    credentials: 'include',
+    headers: isRealToken ? { Authorization: `Bearer ${token}` } : {},
     body: form,
   });
 

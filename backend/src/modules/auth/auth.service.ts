@@ -109,6 +109,69 @@ export class AuthService {
     return { access_token, refresh_token, user: safeUser };
   }
 
+  // ──────────────── GOOGLE LOGIN ────────────────
+  async googleLogin(profile: any, ip?: string) {
+    const supabase = getSupabaseClient();
+
+    // Fixed: Generate a random secure password for Google users
+    // This allows the database constraint to be satisfied
+    // Users can later set their own password if they want
+    const randomPassword = uuidv4() + uuidv4(); // Very secure random password
+    const password_hash = await bcrypt.hash(randomPassword, 12);
+
+    // Fixed: Use upsert to prevent race condition on concurrent logins
+    const { data: user, error } = await supabase
+      .from('users')
+      .upsert({
+        full_name: profile.fullName,
+        email: profile.email,
+        password_hash, // Use generated password hash instead of null
+        role: 'user',
+        status: 'active',
+        email_verified_at: new Date().toISOString(), // Google emails are verified
+        avatar_url: profile.avatar || null,
+      }, { 
+        onConflict: 'email',
+        ignoreDuplicates: false 
+      })
+      .select('*')
+      .single();
+
+    if (error) throw new ConflictException(error.message);
+
+    // Check user status after upsert
+    if (user.status === 'suspended') {
+      throw new UnauthorizedException('Tài khoản của bạn đã bị khóa');
+    }
+    
+    // Fixed: Also check pending_verify status
+    if (user.status === 'pending_verify') {
+      throw new UnauthorizedException('Vui lòng xác thực email trước khi đăng nhập');
+    }
+
+    // Update last login
+    await supabase
+      .from('users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    // Generate JWT tokens
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const access_token = this.jwtService.sign(payload);
+    const refresh_token = uuidv4();
+    const refresh_hash = await bcrypt.hash(refresh_token, 10);
+
+    await supabase.from('refresh_tokens').insert({
+      user_id: user.id,
+      token_hash: refresh_hash,
+      ip_address: ip ?? null,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    const { password_hash: _ph, ...safeUser } = user;
+    return { access_token, refresh_token, user: safeUser };
+  }
+
   // ──────────────── LOGOUT ────────────────
   async logout(userId: string) {
     const supabase = getSupabaseClient();
