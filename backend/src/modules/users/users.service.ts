@@ -132,4 +132,76 @@ export class UsersService {
     if (error || !data) throw new NotFoundException('Người dùng', id);
     return data;
   }
+
+  // Admin: training points list with search & sort
+  async getTrainingPointsAdmin(page = 1, limit = 20, search?: string, sort: 'asc' | 'desc' = 'desc') {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let q = this.supabase
+      .from('users')
+      .select('id, full_name, email, avatar_url, role, status, training_points, created_at', { count: 'exact' })
+      .order('training_points', { ascending: sort === 'asc' });
+
+    if (search) {
+      q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await q.range(from, to);
+    if (error) throw error;
+
+    return {
+      data: data ?? [],
+      meta: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
+    };
+  }
+
+  // Admin: adjust training points manually
+  async adjustTrainingPoints(userId: string, points: number, reason: string) {
+    const { data: user, error: userErr } = await this.supabase
+      .from('users')
+      .select('id, training_points')
+      .eq('id', userId)
+      .single();
+
+    if (userErr || !user) throw new NotFoundException('Người dùng', userId);
+
+    const newBalance = (user.training_points ?? 0) + points;
+
+    const { error: updateErr } = await this.supabase
+      .from('users')
+      .update({ training_points: newBalance })
+      .eq('id', userId);
+
+    if (updateErr) throw updateErr;
+
+    // Log the change
+    await this.supabase.from('training_point_logs').insert({
+      user_id: userId,
+      points_delta: points,
+      reason: reason || 'Admin điều chỉnh',
+      balance_after: newBalance,
+    });
+
+    return { id: userId, training_points: newBalance, points_delta: points, reason };
+  }
+
+  // Admin: all training point logs
+  async getTrainingLogsAdmin(page = 1, limit = 30) {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await this.supabase
+      .from('training_point_logs')
+      .select('id, user_id, points_delta, reason, balance_after, created_at, users!training_point_logs_user_id_fkey(full_name, email, avatar_url)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    return {
+      data: data ?? [],
+      meta: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
+    };
+  }
 }

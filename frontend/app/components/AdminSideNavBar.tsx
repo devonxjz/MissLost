@@ -7,6 +7,7 @@ const adminNavItems = [
   { href: "/admin/admin-overview", icon: "dashboard", label: "Tổng quan" },
   { href: "/admin/post-management", icon: "article", label: "Quản lý bài đăng" },
   { href: "/admin/user-management", icon: "group", label: "Quản lý người dùng" },
+  { href: "/admin/training-points", icon: "stars", label: "Điểm rèn luyện" },
   { href: "/settings", icon: "settings", label: "Cài đặt" },
 ];
 
@@ -108,9 +109,9 @@ export default function AdminSideNavBar() {
           <span className="material-symbols-outlined">group</span>
           <span className="text-[10px]">Người dùng</span>
         </Link>
-        <Link prefetch={true} className="flex flex-col items-center" href="/settings" style={{ color: "var(--color-text-muted)" }}>
-          <span className="material-symbols-outlined">settings</span>
-          <span className="text-[10px]">Cài đặt</span>
+        <Link prefetch={true} className="flex flex-col items-center" href="/admin/training-points" style={{ color: "var(--color-text-muted)" }}>
+          <span className="material-symbols-outlined">stars</span>
+          <span className="text-[10px]">Điểm RL</span>
         </Link>
       </nav>
     </>

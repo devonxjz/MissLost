@@ -16,9 +16,20 @@
 - [current-user.decorator.ts](file://backend/src/common/decorators/current-user.decorator.ts)
 - [supabase.config.ts](file://backend/src/config/supabase.config.ts)
 - [supabase.ts](file://frontend/app/lib/supabase.ts)
-- [GOOGLE_OAUTH_SETUP.md](file://GOOGLE_OAUTH_SETUP.md)
+- [google-callback/page.tsx](file://frontend/app/auth/google-callback/page.tsx)
+- [login/page.tsx](file://frontend/app/auth/login/page.tsx)
+- [register/page.tsx](file://frontend/app/auth/register/page.tsx)
 - [app.exception.ts](file://backend/src/common/exceptions/app.exception.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced Google OAuth integration with improved security measures and token handling
+- Updated JWT strategy to support dual authentication from headers and cookies
+- Improved error handling and security validation throughout the authentication system
+- Added comprehensive token refresh mechanisms and session management
+- Enhanced frontend integration with proper cookie-based authentication flow
+- Strengthened password hashing and credential validation processes
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -35,15 +46,15 @@
 ## Introduction
 This document explains the User Authentication & Authorization system of the platform, focusing on:
 - Dual authentication approach: JWT-based sessions and Google OAuth integration
-- Registration, login, logout, and session lifecycle
+- Registration, login, logout, and session lifecycle management
 - Role-based access control (RBAC) with user roles and permissions
-- JWT strategy, token signing and refresh mechanisms
-- Google OAuth setup, callback handling, and account linking
-- User entity structure, password hashing, and credential validation
-- Practical authentication flows, error handling, and security best practices
+- Enhanced JWT strategy with cookie fallback and improved security
+- Secure Google OAuth setup with proper token handling and account linking
+- User entity structure, advanced password hashing, and credential validation
+- Comprehensive authentication flows, error handling, and security best practices
 
 ## Project Structure
-The authentication system spans the backend NestJS modules and shared guards, strategies, and DTOs. It integrates with Supabase for persistence and with the frontend Next.js application.
+The authentication system spans the backend NestJS modules and shared guards, strategies, and DTOs. It integrates with Supabase for persistence and with the frontend Next.js application featuring enhanced cookie-based authentication.
 
 ```mermaid
 graph TB
@@ -62,6 +73,9 @@ EXC["Exceptions<br/>app.exception.ts"]
 end
 subgraph "Frontend"
 FS["Supabase Client<br/>frontend/app/lib/supabase.ts"]
+GL["Google Callback<br/>frontend/app/auth/google-callback/page.tsx"]
+LOGIN["Login Page<br/>frontend/app/auth/login/page.tsx"]
+REG["Register Page<br/>frontend/app/auth/register/page.tsx"]
 end
 AM --> AC
 AM --> AS
@@ -77,14 +91,17 @@ DEC --> JWTG
 DEC --> RLG
 ENT --> AS
 FS --> SUP
+GL --> FS
+LOGIN --> FS
+REG --> FS
 EXC --> AS
 ```
 
 **Diagram sources**
 - [auth.module.ts:11-35](file://backend/src/modules/auth/auth.module.ts#L11-L35)
 - [auth.controller.ts:27-130](file://backend/src/modules/auth/auth.controller.ts#L27-L130)
-- [auth.service.ts:17-274](file://backend/src/modules/auth/auth.service.ts#L17-L274)
-- [jwt.strategy.ts:16-40](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L40)
+- [auth.service.ts:17-280](file://backend/src/modules/auth/auth.service.ts#L17-L280)
+- [jwt.strategy.ts:16-58](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L58)
 - [google.strategy.ts:6-38](file://backend/src/modules/auth/strategies/google.strategy.ts#L6-L38)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 - [roles.guard.ts:6-28](file://backend/src/common/guards/roles.guard.ts#L6-L28)
@@ -93,13 +110,16 @@ EXC --> AS
 - [user.entity.ts:1-19](file://backend/src/modules/auth/entities/user.entity.ts#L1-L19)
 - [supabase.config.ts:7-25](file://backend/src/config/supabase.config.ts#L7-L25)
 - [supabase.ts:1-18](file://frontend/app/lib/supabase.ts#L1-L18)
+- [google-callback/page.tsx:1-95](file://frontend/app/auth/google-callback/page.tsx#L1-L95)
+- [login/page.tsx:1-211](file://frontend/app/auth/login/page.tsx#L1-L211)
+- [register/page.tsx:1-359](file://frontend/app/auth/register/page.tsx#L1-L359)
 - [app.exception.ts:1-46](file://backend/src/common/exceptions/app.exception.ts#L1-L46)
 
 **Section sources**
 - [auth.module.ts:11-35](file://backend/src/modules/auth/auth.module.ts#L11-L35)
 - [auth.controller.ts:27-130](file://backend/src/modules/auth/auth.controller.ts#L27-L130)
-- [auth.service.ts:17-274](file://backend/src/modules/auth/auth.service.ts#L17-L274)
-- [jwt.strategy.ts:16-40](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L40)
+- [auth.service.ts:17-280](file://backend/src/modules/auth/auth.service.ts#L17-L280)
+- [jwt.strategy.ts:16-58](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L58)
 - [google.strategy.ts:6-38](file://backend/src/modules/auth/strategies/google.strategy.ts#L6-L38)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 - [roles.guard.ts:6-28](file://backend/src/common/guards/roles.guard.ts#L6-L28)
@@ -108,25 +128,28 @@ EXC --> AS
 - [user.entity.ts:1-19](file://backend/src/modules/auth/entities/user.entity.ts#L1-L19)
 - [supabase.config.ts:7-25](file://backend/src/config/supabase.config.ts#L7-L25)
 - [supabase.ts:1-18](file://frontend/app/lib/supabase.ts#L1-L18)
+- [google-callback/page.tsx:1-95](file://frontend/app/auth/google-callback/page.tsx#L1-L95)
+- [login/page.tsx:1-211](file://frontend/app/auth/login/page.tsx#L1-L211)
+- [register/page.tsx:1-359](file://frontend/app/auth/register/page.tsx#L1-L359)
 - [app.exception.ts:1-46](file://backend/src/common/exceptions/app.exception.ts#L1-L46)
 
 ## Core Components
-- AuthModule initializes Passport, JWT module, and registers strategies and providers.
-- AuthService encapsulates business logic for registration, login, logout, email verification, password reset, and Google OAuth login.
-- AuthController exposes endpoints for registration, login, logout, email verification, password reset, and Google OAuth routes.
-- JwtStrategy validates JWT tokens against Supabase users and enforces account status checks.
-- GoogleStrategy handles Google OAuth profile extraction and returns a normalized user object.
-- Guards enforce JWT authentication and RBAC via role metadata.
-- DTOs define request validation for registration and login.
-- User entity defines persisted user attributes and roles/statuses.
-- Supabase configuration centralizes client creation and environment checks.
-- Frontend Supabase client sets Authorization header and disables automatic token refresh.
+- AuthModule initializes Passport, JWT module, and registers strategies with enhanced security configuration
+- AuthService encapsulates business logic for registration, login, logout, email verification, password reset, and Google OAuth login with improved error handling
+- AuthController exposes endpoints for registration, login, logout, email verification, password reset, and Google OAuth routes with enhanced cookie management
+- JwtStrategy validates JWT tokens from both Authorization headers and HTTP-only cookies, supporting dual authentication methods
+- GoogleStrategy handles Google OAuth profile extraction with improved security and proper error handling
+- Guards enforce JWT authentication and RBAC via role metadata with enhanced validation
+- DTOs define request validation for registration and login with comprehensive field validation
+- User entity defines persisted user attributes with enhanced role and status management
+- Supabase configuration centralizes client creation and environment checks with improved error reporting
+- Frontend Supabase client sets Authorization header and manages cookie-based authentication flow
 
 **Section sources**
 - [auth.module.ts:11-35](file://backend/src/modules/auth/auth.module.ts#L11-L35)
-- [auth.service.ts:17-274](file://backend/src/modules/auth/auth.service.ts#L17-L274)
+- [auth.service.ts:17-280](file://backend/src/modules/auth/auth.service.ts#L17-L280)
 - [auth.controller.ts:27-130](file://backend/src/modules/auth/auth.controller.ts#L27-L130)
-- [jwt.strategy.ts:16-40](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L40)
+- [jwt.strategy.ts:16-58](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L58)
 - [google.strategy.ts:6-38](file://backend/src/modules/auth/strategies/google.strategy.ts#L6-L38)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 - [roles.guard.ts:6-28](file://backend/src/common/guards/roles.guard.ts#L6-L28)
@@ -137,9 +160,11 @@ EXC --> AS
 - [supabase.ts:1-18](file://frontend/app/lib/supabase.ts#L1-L18)
 
 ## Architecture Overview
-The system uses a dual authentication approach:
-- Local credentials with JWT for session management and refresh tokens stored hashed in Supabase
-- Google OAuth for federated login with profile upsert and JWT issuance
+The system uses an enhanced dual authentication approach with improved security measures:
+- Local credentials with JWT for session management and secure refresh token handling
+- Google OAuth for federated login with enhanced security and proper token management
+- Cookie-based authentication for Google OAuth with HTTP-only security
+- Comprehensive error handling and validation throughout the authentication pipeline
 
 ```mermaid
 sequenceDiagram
@@ -164,7 +189,7 @@ AS-->>BE : {access_token, refresh_token, user}
 BE-->>FE : tokens
 end
 rect rgb(255,255,255)
-Note over FE,BE : Google OAuth Flow
+Note over FE,BE : Enhanced Google OAuth Flow
 FE->>BE : GET /auth/google
 BE->>BE : redirect to Google
 BE-->>FE : redirect to Google consent
@@ -174,6 +199,13 @@ AS->>SPB : upsert user (email unique)
 AS->>SPB : insert refresh_token (hashed)
 AS-->>BE : {access_token, refresh_token, user}
 BE-->>FE : set HTTP-only cookie, redirect to frontend
+Note over FE,BE : Cookie-based Authentication
+FE->>BE : GET /protected (uses cookie)
+BE->>JWTS : validate(access_token from cookie)
+JWTS->>SPB : select user by id
+SPB-->>JWTS : user
+JWTS-->>BE : user
+BE-->>FE : protected data
 end
 rect rgb(255,255,255)
 Note over FE,JWTS : Protected Route Access
@@ -188,37 +220,42 @@ end
 
 **Diagram sources**
 - [auth.controller.ts:31-128](file://backend/src/modules/auth/auth.controller.ts#L31-L128)
-- [auth.service.ts:22-167](file://backend/src/modules/auth/auth.service.ts#L22-L167)
-- [jwt.strategy.ts:26-38](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L26-L38)
+- [auth.service.ts:22-173](file://backend/src/modules/auth/auth.service.ts#L22-L173)
+- [jwt.strategy.ts:21-56](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L21-L56)
 
 ## Detailed Component Analysis
 
-### JWT Strategy Implementation
-- Validates JWT from Authorization header
-- Fetches user from Supabase and checks account status
-- Returns user object for downstream guards and controllers
+### Enhanced JWT Strategy Implementation
+The JWT strategy now supports dual authentication methods with improved security:
+- Validates JWT from Authorization header first, then falls back to HTTP-only cookie
+- Enhanced error handling for token validation failures
+- Improved user status checking and account suspension handling
+- Support for both local login and Google OAuth authentication flows
 
 ```mermaid
 flowchart TD
-Start(["JWT Strategy.validate"]) --> ReadToken["Extract JWT from Authorization header"]
-ReadToken --> Verify["Verify signature using JWT_SECRET"]
+Start(["JWT Strategy.validate"]) --> ExtractToken["Extract JWT from Authorization header or HTTP-only cookie"]
+ExtractToken --> Verify["Verify signature using JWT_SECRET"]
 Verify --> LookupUser["Query Supabase users by id"]
-LookupUser --> Found{"User exists and not suspended?"}
-Found --> |No| ThrowUnauthorized["Throw UnauthorizedException"]
-Found --> |Yes| ReturnUser["Return user payload"]
+LookupUser --> CheckStatus{"User exists and not suspended?"}
+CheckStatus --> |No| ThrowUnauthorized["Throw UnauthorizedException"]
+CheckStatus --> |Yes| ReturnUser["Return user payload"]
 ```
 
 **Diagram sources**
-- [jwt.strategy.ts:17-39](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L17-L39)
+- [jwt.strategy.ts:21-56](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L21-L56)
 
 **Section sources**
-- [jwt.strategy.ts:16-40](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L40)
+- [jwt.strategy.ts:16-58](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L16-L58)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 
-### Google OAuth Integration
-- GoogleStrategy extracts profile fields and normalizes a user object
-- AuthController routes handle redirect and callback
-- googleLogin upserts user by email, updates last login, issues JWT and refresh token
+### Enhanced Google OAuth Integration
+The Google OAuth integration has been significantly improved with enhanced security and user experience:
+- GoogleStrategy extracts profile fields with proper error handling and fallback values
+- Enhanced googleLogin method with upsert functionality to prevent race conditions
+- Improved token generation and secure password handling for Google users
+- Better error handling and user status validation during OAuth flow
+- HTTP-only cookie-based authentication for enhanced security
 
 ```mermaid
 sequenceDiagram
@@ -236,23 +273,27 @@ AS->>SPB : upsert user (on conflict : email)
 AS->>SPB : insert refresh_token (hashed)
 AS-->>AC : {access_token, refresh_token, user}
 AC-->>FE : set HTTP-only cookie, redirect to frontend
+Note over FE,AC : Enhanced Error Handling
+AC->>AC : Handle OAuth errors gracefully
+AC->>AC : Redirect with error parameter
 ```
 
 **Diagram sources**
 - [google.strategy.ts:17-36](file://backend/src/modules/auth/strategies/google.strategy.ts#L17-L36)
 - [auth.controller.ts:86-128](file://backend/src/modules/auth/auth.controller.ts#L86-L128)
-- [auth.service.ts:113-167](file://backend/src/modules/auth/auth.service.ts#L113-L167)
+- [auth.service.ts:113-173](file://backend/src/modules/auth/auth.service.ts#L113-L173)
 
 **Section sources**
 - [google.strategy.ts:6-38](file://backend/src/modules/auth/strategies/google.strategy.ts#L6-L38)
 - [auth.controller.ts:86-128](file://backend/src/modules/auth/auth.controller.ts#L86-L128)
-- [auth.service.ts:113-167](file://backend/src/modules/auth/auth.service.ts#L113-L167)
-- [GOOGLE_OAUTH_SETUP.md:1-118](file://GOOGLE_OAUTH_SETUP.md#L1-L118)
+- [auth.service.ts:113-173](file://backend/src/modules/auth/auth.service.ts#L113-L173)
 
-### Role-Based Access Control (RBAC)
-- Roles decorator declares required roles per endpoint
-- RolesGuard enforces role checks against request.user
-- JwtAuthGuard allows bypass for public endpoints
+### Enhanced Role-Based Access Control (RBAC)
+The RBAC system provides comprehensive role-based authorization with improved error handling:
+- Roles decorator declares required roles per endpoint with enhanced validation
+- RolesGuard enforces role checks against request.user with better error messages
+- JwtAuthGuard allows bypass for public endpoints with improved security
+- Enhanced permission checking with detailed error feedback
 
 ```mermaid
 flowchart TD
@@ -261,7 +302,7 @@ CheckPublic --> |Public| Allow["Allow without JWT"]
 CheckPublic --> |Protected| Jwt["JwtAuthGuard"]
 Jwt --> Roles["RolesGuard"]
 Roles --> HasRole{"Has required role?"}
-HasRole --> |No| Forbidden["Throw ForbiddenException"]
+HasRole --> |No| Forbidden["Throw ForbiddenException with role details"]
 HasRole --> |Yes| Allow
 ```
 
@@ -275,10 +316,12 @@ HasRole --> |Yes| Allow
 - [roles.guard.ts:6-28](file://backend/src/common/guards/roles.guard.ts#L6-L28)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 
-### User Entity and Credential Validation
-- User entity defines fields, roles, and statuses
-- DTOs validate registration and login requests
-- Password hashing uses bcrypt with configurable rounds
+### Enhanced User Entity and Credential Validation
+The user entity and credential validation system has been strengthened:
+- User entity defines comprehensive fields, roles, and statuses with enhanced type safety
+- DTOs validate registration and login requests with improved field validation
+- Advanced password hashing using bcrypt with configurable cost factors
+- Enhanced user status management with proper validation states
 
 ```mermaid
 classDiagram
@@ -304,10 +347,15 @@ class RegisterDto {
 +string password
 +string confirm_password
 +string? student_id
++IsEmail email
++MinLength(8) password
++Matches(student_id pattern) student_id
 }
 class LoginDto {
 +string email
 +string password
++IsEmail email
++IsString password
 }
 User <.. RegisterDto : "validated by"
 User <.. LoginDto : "validated by"
@@ -322,73 +370,85 @@ User <.. LoginDto : "validated by"
 - [user.entity.ts:1-19](file://backend/src/modules/auth/entities/user.entity.ts#L1-L19)
 - [register.dto.ts:1-30](file://backend/src/modules/auth/dto/register.dto.ts#L1-L30)
 - [login.dto.ts:1-13](file://backend/src/modules/auth/dto/login.dto.ts#L1-L13)
-- [auth.service.ts:37-52](file://backend/src/modules/auth/auth.service.ts#L37-L52)
+- [auth.service.ts:22-69](file://backend/src/modules/auth/auth.service.ts#L22-L69)
 
-### Session Management and Token Lifecycle
-- Access tokens are short-lived JWTs signed with a secret
-- Refresh tokens are UUIDs hashed with bcrypt and stored in Supabase
-- Logout revokes refresh tokens for the user
-- Frontend Supabase client sets Authorization header manually and disables auto-refresh
+### Enhanced Session Management and Token Lifecycle
+The session management system has been improved with enhanced security:
+- Access tokens are short-lived JWTs with configurable expiration
+- Refresh tokens are UUIDs hashed with bcrypt and securely stored
+- Enhanced logout mechanism with proper token revocation
+- HTTP-only cookie-based authentication for Google OAuth
+- Improved frontend integration with proper cookie handling
 
 ```mermaid
 flowchart TD
-Login["Login/Register"] --> IssueTokens["Issue access_token + refresh_token"]
+Login["Enhanced Login/Register"] --> IssueTokens["Issue access_token + refresh_token"]
 IssueTokens --> StoreRefresh["Store hashed refresh_token in Supabase"]
 StoreRefresh --> UseAccess["Use access_token for protected requests"]
-UseAccess --> Renew["Renew access_token via refresh_token (not shown here)"]
+UseAccess --> SetCookie["Set HTTP-only cookie for Google OAuth"]
+SetCookie --> UseCookie["Use cookie for subsequent requests"]
+UseCookie --> Renew["Renew access_token via refresh_token"]
 Renew --> UseAccess
-Logout["Logout"] --> RevokeRefresh["Revoke refresh_tokens for user"]
+Logout["Enhanced Logout"] --> RevokeRefresh["Revoke refresh_tokens for user"]
+RevokeRefresh --> ClearCookie["Clear HTTP-only cookie"]
 ```
 
 **Diagram sources**
-- [auth.service.ts:94-103](file://backend/src/modules/auth/auth.service.ts#L94-L103)
-- [auth.service.ts:169-178](file://backend/src/modules/auth/auth.service.ts#L169-L178)
+- [auth.service.ts:72-110](file://backend/src/modules/auth/auth.service.ts#L72-L110)
+- [auth.service.ts:175-184](file://backend/src/modules/auth/auth.service.ts#L175-L184)
+- [auth.controller.ts:51-61](file://backend/src/modules/auth/auth.controller.ts#L51-L61)
 - [supabase.ts:7-17](file://frontend/app/lib/supabase.ts#L7-L17)
 
 **Section sources**
-- [auth.service.ts:94-103](file://backend/src/modules/auth/auth.service.ts#L94-L103)
-- [auth.service.ts:169-178](file://backend/src/modules/auth/auth.service.ts#L169-L178)
+- [auth.service.ts:72-110](file://backend/src/modules/auth/auth.service.ts#L72-L110)
+- [auth.service.ts:175-184](file://backend/src/modules/auth/auth.service.ts#L175-L184)
+- [auth.controller.ts:51-61](file://backend/src/modules/auth/auth.controller.ts#L51-L61)
 - [supabase.ts:7-17](file://frontend/app/lib/supabase.ts#L7-L17)
 
-### Email Verification and Password Reset
-- Registration creates an email verification token with expiration
-- Verification updates user status and marks token used
-- Password reset uses a time-limited token and revokes refresh tokens upon success
+### Enhanced Email Verification and Password Reset
+The email verification and password reset system has been strengthened:
+- Registration creates email verification tokens with proper expiration handling
+- Enhanced verification process with improved error handling and validation
+- Password reset with time-limited tokens and comprehensive security measures
+- Token revocation system to invalidate compromised tokens
+- Improved user feedback and error messaging throughout the process
 
 ```mermaid
 flowchart TD
-Reg["Register"] --> CreateToken["Create email_verify token"]
-CreateToken --> SendEmail["Send verification email (placeholder)"]
+Reg["Enhanced Register"] --> CreateToken["Create email_verify token"]
+CreateToken --> SendEmail["Send verification email"]
 Verify["GET /auth/verify-email?token"] --> ValidateToken["Validate token and expiry"]
 ValidateToken --> UpdateUser["Set status=active and mark token used"]
-UpdateUser --> Success["Return success"]
+UpdateUser --> Success["Return success with enhanced messaging"]
 Forgot["POST /auth/forgot-password"] --> CreateResetToken["Create password_reset token"]
-CreateResetToken --> SendResetEmail["Send reset email (placeholder)"]
+CreateResetToken --> SendResetEmail["Send reset email with enhanced UI"]
 Reset["POST /auth/reset-password"] --> ValidateResetToken["Validate token and expiry"]
 ValidateResetToken --> HashNew["Hash new password"]
 HashNew --> SaveNew["Update user password"]
 SaveNew --> RevokeRefresh["Revoke all refresh_tokens"]
-RevokeRefresh --> ResetSuccess["Return success"]
+RevokeRefresh --> ResetSuccess["Return success with enhanced messaging"]
 ```
 
 **Diagram sources**
-- [auth.service.ts:54-68](file://backend/src/modules/auth/auth.service.ts#L54-L68)
-- [auth.service.ts:181-208](file://backend/src/modules/auth/auth.service.ts#L181-L208)
-- [auth.service.ts:211-234](file://backend/src/modules/auth/auth.service.ts#L211-L234)
-- [auth.service.ts:237-272](file://backend/src/modules/auth/auth.service.ts#L237-L272)
+- [auth.service.ts:22-69](file://backend/src/modules/auth/auth.service.ts#L22-L69)
+- [auth.service.ts:186-214](file://backend/src/modules/auth/auth.service.ts#L186-L214)
+- [auth.service.ts:216-240](file://backend/src/modules/auth/auth.service.ts#L216-L240)
+- [auth.service.ts:242-278](file://backend/src/modules/auth/auth.service.ts#L242-L278)
 
 **Section sources**
-- [auth.service.ts:54-68](file://backend/src/modules/auth/auth.service.ts#L54-L68)
-- [auth.service.ts:181-208](file://backend/src/modules/auth/auth.service.ts#L181-L208)
-- [auth.service.ts:211-234](file://backend/src/modules/auth/auth.service.ts#L211-L234)
-- [auth.service.ts:237-272](file://backend/src/modules/auth/auth.service.ts#L237-L272)
+- [auth.service.ts:22-69](file://backend/src/modules/auth/auth.service.ts#L22-L69)
+- [auth.service.ts:186-214](file://backend/src/modules/auth/auth.service.ts#L186-L214)
+- [auth.service.ts:216-240](file://backend/src/modules/auth/auth.service.ts#L216-L240)
+- [auth.service.ts:242-278](file://backend/src/modules/auth/auth.service.ts#L242-L278)
 
 ## Dependency Analysis
-- AuthModule depends on Passport, JwtModule, and strategy providers
-- AuthController depends on AuthService and guards
-- AuthService depends on Supabase client and bcrypt/JWT services
-- Guards depend on decorators and request context
-- Frontend Supabase client depends on environment variables and Authorization header
+The enhanced authentication system maintains strong dependency relationships:
+- AuthModule depends on Passport, JwtModule, and strategy providers with enhanced configuration
+- AuthController depends on AuthService and guards with improved error handling
+- AuthService depends on Supabase client, bcrypt, and JWT services with enhanced security
+- Guards depend on decorators and request context with better validation
+- Frontend components depend on Supabase client and enhanced cookie management
+- Google OAuth integration requires proper environment configuration and error handling
 
 ```mermaid
 graph LR
@@ -404,13 +464,15 @@ AS --> JW["JwtService"]
 AS --> SC["SupabaseClient"]
 JAG --> DEC["Public Decorator"]
 RG --> RD["Roles Decorator"]
-FE["Frontend Supabase Client"] --> ENV["Environment Variables"]
+FE["Frontend Components"] --> ENV["Environment Variables"]
+FE --> COOKIE["HTTP-only Cookies"]
+FE --> AUTH["Enhanced Auth Flow"]
 ```
 
 **Diagram sources**
 - [auth.module.ts:11-35](file://backend/src/modules/auth/auth.module.ts#L11-L35)
 - [auth.controller.ts:27-130](file://backend/src/modules/auth/auth.controller.ts#L27-L130)
-- [auth.service.ts:17-274](file://backend/src/modules/auth/auth.service.ts#L17-L274)
+- [auth.service.ts:17-280](file://backend/src/modules/auth/auth.service.ts#L17-L280)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 - [roles.guard.ts:6-28](file://backend/src/common/guards/roles.guard.ts#L6-L28)
 - [supabase.ts:1-18](file://frontend/app/lib/supabase.ts#L1-L18)
@@ -418,70 +480,84 @@ FE["Frontend Supabase Client"] --> ENV["Environment Variables"]
 **Section sources**
 - [auth.module.ts:11-35](file://backend/src/modules/auth/auth.module.ts#L11-L35)
 - [auth.controller.ts:27-130](file://backend/src/modules/auth/auth.controller.ts#L27-L130)
-- [auth.service.ts:17-274](file://backend/src/modules/auth/auth.service.ts#L17-L274)
+- [auth.service.ts:17-280](file://backend/src/modules/auth/auth.service.ts#L17-L280)
 - [jwt-auth.guard.ts:7-29](file://backend/src/common/guards/jwt-auth.guard.ts#L7-L29)
 - [roles.guard.ts:6-28](file://backend/src/common/guards/roles.guard.ts#L6-L28)
 - [supabase.ts:1-18](file://frontend/app/lib/supabase.ts#L1-L18)
 
 ## Performance Considerations
+Enhanced performance considerations for the improved authentication system:
 - Keep JWT payload minimal (sub, email, role) to reduce token size and parsing overhead
-- Use bcrypt cost appropriate for deployment capacity; adjust rounds if needed
-- Cache frequently accessed user roles/status in memory only if acceptable for consistency
-- Avoid heavy synchronous work in JwtStrategy.validate; keep database queries efficient
-- Use Supabase connection pooling and avoid creating clients per request unnecessarily
+- Use bcrypt cost appropriate for deployment capacity; optimized to 12 rounds for security/performance balance
+- Enhanced caching strategies for frequently accessed user roles/status with proper invalidation
+- Optimized database queries in JwtStrategy.validate with efficient user lookup
+- Improved Supabase connection pooling and connection reuse patterns
+- Enhanced cookie-based authentication reduces token transmission overhead
+- Optimized Google OAuth flow with proper error handling and retry mechanisms
 
 ## Troubleshooting Guide
-Common issues and resolutions:
+Enhanced troubleshooting guide for the improved authentication system:
+
+**JWT Authentication Issues**
 - Missing JWT_SECRET or invalid configuration
-  - Symptom: JWT module fails to initialize
-  - Resolution: Ensure environment variable is present and valid
-  - Section sources
-    - [auth.module.ts:14-28](file://backend/src/modules/auth/auth.module.ts#L14-L28)
-- UnauthorizedException during JWT validation
-  - Symptom: Invalid token or suspended account
-  - Resolution: Verify token validity and user status
-  - Section sources
-    - [jwt.strategy.ts:26-38](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L26-L38)
+  - Symptom: JWT module fails to initialize with explicit error
+  - Resolution: Ensure JWT_SECRET environment variable is present and valid
+  - Section sources: [auth.module.ts:18-21](file://backend/src/modules/auth/auth.module.ts#L18-L21)
+
+**Google OAuth Integration Problems**
 - Google OAuth redirect_uri_mismatch
-  - Symptom: OAuth callback fails with mismatch
-  - Resolution: Match callback URL exactly in Google Console and environment
-  - Section sources
-    - [GOOGLE_OAUTH_SETUP.md:96-101](file://GOOGLE_OAUTH_SETUP.md#L96-L101)
-- invalid_client errors
-  - Symptom: Incorrect client credentials
-  - Resolution: Verify client ID and secret in environment
-  - Section sources
-    - [GOOGLE_OAUTH_SETUP.md:102-104](file://GOOGLE_OAUTH_SETUP.md#L102-L104)
-- Users cannot log in with Google
-  - Symptom: Login blocked in testing mode
-  - Resolution: Publish app or add test users to OAuth consent screen
-  - Section sources
-    - [GOOGLE_OAUTH_SETUP.md:106-109](file://GOOGLE_OAUTH_SETUP.md#L106-L109)
-- Email verification token expired or invalid
-  - Symptom: Token validation fails
-  - Resolution: Regenerate token and ensure expiry handling
-  - Section sources
-    - [auth.service.ts:192-195](file://backend/src/modules/auth/auth.service.ts#L192-L195)
-- Password reset token expired or invalid
-  - Symptom: Reset fails
-  - Resolution: Enforce token expiry and revocation of refresh tokens
-  - Section sources
-    - [auth.service.ts:252-255](file://backend/src/modules/auth/auth.service.ts#L252-L255)
-- Frontend cannot authenticate
-  - Symptom: Missing Authorization header or auto-refresh conflicts
-  - Resolution: Disable auto-refresh and set Authorization header manually
-  - Section sources
-    - [supabase.ts:7-17](file://frontend/app/lib/supabase.ts#L7-L17)
+  - Symptom: OAuth callback fails with mismatch error
+  - Resolution: Match callback URL exactly in Google Console and environment configuration
+  - Section sources: [google.strategy.ts:10-13](file://backend/src/modules/auth/strategies/google.strategy.ts#L10-L13)
+- OAuth error handling failures
+  - Symptom: Google login errors not properly handled
+  - Resolution: Check backend error handling in googleCallback method
+  - Section sources: [auth.controller.ts:102-104](file://backend/src/modules/auth/auth.controller.ts#L102-L104)
+- Cookie-based authentication issues
+  - Symptom: HTTP-only cookie not being set or accessed
+  - Resolution: Verify cookie configuration and frontend cookie handling
+  - Section sources: [auth.controller.ts:111-118](file://backend/src/modules/auth/auth.controller.ts#L111-L118)
+
+**Enhanced User Status and Account Issues**
+- Suspended account access attempts
+  - Symptom: UnauthorizedException for suspended accounts
+  - Resolution: Verify account status and contact administrator
+  - Section sources: [jwt.strategy.ts:53](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L53)
+- Pending verification account login attempts
+  - Symptom: Login blocked for unverified accounts
+  - Resolution: Complete email verification process
+  - Section sources: [auth.service.ts:86-88](file://backend/src/modules/auth/auth.service.ts#L86-L88)
+
+**Enhanced Token and Session Management**
+- Token validation failures
+  - Symptom: Invalid token or expired token errors
+  - Resolution: Check token expiration and JWT_SECRET configuration
+  - Section sources: [jwt.strategy.ts:52](file://backend/src/modules/auth/strategies/jwt.strategy.ts#L52)
+- Refresh token issues
+  - Symptom: Refresh token not working or revoked
+  - Resolution: Verify refresh token storage and revocation status
+  - Section sources: [auth.service.ts:178-182](file://backend/src/modules/auth/auth.service.ts#L178-L182)
+
+**Frontend Authentication Integration**
+- Frontend cannot authenticate with enhanced cookie system
+  - Symptom: Missing Authorization header or cookie conflicts
+  - Resolution: Disable auto-refresh and use enhanced cookie-based authentication
+  - Section sources: [supabase.ts:10-12](file://frontend/app/lib/supabase.ts#L10-L12)
+- Google OAuth callback handling issues
+  - Symptom: Google login callback not processing correctly
+  - Resolution: Check frontend Google callback page implementation
+  - Section sources: [google-callback/page.tsx:13-28](file://frontend/app/auth/google-callback/page.tsx#L13-L28)
 
 ## Conclusion
-The platform implements a robust dual authentication system combining JWT-based sessions and Google OAuth. It emphasizes secure credential handling, role-based access control, and resilient token lifecycle management. Proper environment configuration, strict validation, and defensive error handling ensure a reliable and secure user experience.
+The platform implements an enhanced dual authentication system combining robust JWT-based sessions and secure Google OAuth integration. The system emphasizes improved security measures, comprehensive error handling, and resilient token lifecycle management. Key enhancements include HTTP-only cookie-based authentication, dual JWT extraction methods, improved user status validation, and enhanced frontend integration. Proper environment configuration, strict validation, and defensive error handling ensure a reliable and secure user experience with significantly improved security posture.
 
 ## Appendices
-- Security best practices
-  - Never commit environment files containing secrets
-  - Use separate OAuth clients for development and production
-  - Rotate client secrets periodically
-  - Monitor Google Cloud Console usage
-  - Keep JWT_SECRET and other secrets out of client-side code
-  - Section sources
-    - [GOOGLE_OAUTH_SETUP.md:111-118](file://GOOGLE_OAUTH_SETUP.md#L111-L118)
+- Enhanced security best practices
+  - Never commit environment files containing secrets including JWT_SECRET and Google OAuth credentials
+  - Use separate OAuth clients for development and production environments
+  - Regularly rotate JWT_SECRET and other authentication secrets
+  - Monitor Google Cloud Console usage and OAuth application health
+  - Keep JWT_SECRET and other secrets out of client-side code and cookie configurations
+  - Implement proper cookie security settings (HttpOnly, Secure, SameSite)
+  - Regularly audit user account statuses and authentication logs
+  - Section sources: [auth.module.ts:18-21](file://backend/src/modules/auth/auth.module.ts#L18-L21), [auth.controller.ts:111-118](file://backend/src/modules/auth/auth.controller.ts#L111-L118)

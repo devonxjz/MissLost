@@ -24,6 +24,7 @@ export default function UserManagement() {
     const [meta, setMeta] = useState<UsersMeta>({ page: 1, limit: 20, total: 0 });
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [userStats, setUserStats] = useState<any>(null);
 
     const loadUsers = useCallback(async (page = 1) => {
         setLoading(true);
@@ -40,9 +41,23 @@ export default function UserManagement() {
         }
     }, []);
 
+    const loadStats = useCallback(async () => {
+        try {
+            const raw = await apiFetch<any>("/admin/dashboard/enhanced");
+            const data = raw?.data ?? raw;
+            setUserStats(data?.users ?? null);
+        } catch (err) {
+            console.error("User stats error:", err);
+        }
+    }, []);
+
     useEffect(() => {
         loadUsers(1);
     }, [loadUsers]);
+
+    useEffect(() => {
+        loadStats();
+    }, [loadStats]);
 
     const handleSuspend = async (userId: string) => {
         if (!confirm("Bạn có chắc muốn khóa tài khoản này?")) return;
@@ -71,11 +86,11 @@ export default function UserManagement() {
 
     const totalPages = Math.ceil(meta.total / meta.limit);
 
-    // Stats computed from meta
-    const totalUsers = meta.total;
-    const activeUsers = users.filter((u) => u.status === "active").length;
-    const suspendedUsers = users.filter((u) => u.status === "suspended").length;
-    const pendingUsers = users.filter((u) => u.status === "pending_verify").length;
+    // Stats from enhanced endpoint (accurate totals across all pages)
+    const totalUsers = userStats?.total ?? meta.total;
+    const activeUsers = userStats?.active ?? 0;
+    const suspendedUsers = userStats?.suspended ?? 0;
+    const pendingUsers = userStats?.pending_verify ?? 0;
 
     return (
         <main className="pb-12 px-8 min-h-screen pt-8">
